@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, platform }) => {
+export const load: PageServerLoad = async ({ params, platform, url }) => {
     const { id } = params;
 
     if (!platform?.env.remocoespcce) {
@@ -28,6 +28,11 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 
     return {
         plantao,
-        equipeExtra: equipe.results ?? []
+        equipeExtra: equipe.results ?? [],
+        config: {
+            dir: url.searchParams.get('dir') ?? '',
+            just: url.searchParams.get('just') ?? '',
+            mb: url.searchParams.get('mb') ?? ''
+        }
     };
 };
