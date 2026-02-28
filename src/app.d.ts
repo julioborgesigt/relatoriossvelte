@@ -1,9 +1,19 @@
 declare global {
 	namespace App {
+		interface Locals {
+			usuario: {
+				matricula: string;
+				nome: string;
+				email: string;
+				lotacao: string | null;
+				cargo: string | null;
+			} | null;
+		}
 		interface Platform {
 			env: {
-				// Use exatamente o nome do seu binding aqui
-				remocoespcce: D1Database; 
+				remocoespcce: D1Database;
+				// Variável opcional para envio de email (Resend)
+				RESEND_API_KEY?: string;
 			};
 			context: ExecutionContext;
 			caches: CacheStorage & { default: Cache };
