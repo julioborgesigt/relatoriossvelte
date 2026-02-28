@@ -42,7 +42,7 @@
             📋 Extra
         </a>
     {/if}
-    {#if p.status === 'finalizado'}
+    {#if p.status === 'finalizado' || p.status === 'retificado'}
         <a href="/plantao/retificar/{p.id}" class="bg-amber-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-amber-500 transition">
             ✏️ Retificar
         </a>
@@ -56,6 +56,13 @@
 <!-- Documento A4 -->
 <div class="bg-white min-h-screen p-0 print:p-0">
     <div class="max-w-[210mm] mx-auto px-[12mm] py-[10mm] text-black text-[11px]" style="font-family: 'Segoe UI', Arial, sans-serif;">
+
+        <!-- ══ TARJA DE RETIFICAÇÃO ══ -->
+        {#if p.status === 'retificado'}
+            <div class="text-center mb-3 border-2 border-red-700 bg-red-50 py-1.5">
+                <span class="font-black text-red-700 text-[13px] uppercase tracking-[0.4em]">✦ RETIFICADO ✦</span>
+            </div>
+        {/if}
 
         <!-- ══ CABEÇALHO ══ -->
         <header class="text-center border-b-2 border-black pb-3 mb-4">
