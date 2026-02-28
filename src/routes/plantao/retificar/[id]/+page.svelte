@@ -94,9 +94,9 @@
     let nextEnvolvidoId = $state(envolvidoCounter);
 
     let carregando = $state(false);
-    let relatorioFinalizado = $state(false);
-    let protocoloGerado = $state('');
-    let relatorioIdNovo = $state(0);
+    let relatorioFinalizado = $state(data.original.status === 'retificado');
+    let protocoloGerado = $state(data.original.status === 'retificado' ? (data.original.protocolo ?? '') : '');
+    let relatorioIdNovo = $state(data.original.status === 'retificado' ? data.original.id : 0);
 
     // Modal do relatório extra
     let mostrarModalExtra = $state(false);
@@ -112,11 +112,14 @@
     // params diferentes), o SvelteKit reutiliza a instância e os $state
     // persistem. Este $effect detecta a troca de relatório e reseta o estado
     // de finalização para que o botão FINALIZAR apareça corretamente.
+    // Reseta/inicializa o estado de finalização sempre que o relatório mudar
+    // (ex: navegação de /retificar/5 para /retificar/7 — mesmo componente).
+    // Se o relatório já foi retificado (status='retificado'), inicia como finalizado.
     $effect(() => {
-        data.original.id; // dependência: re-executa quando o id muda
-        relatorioFinalizado = false;
-        protocoloGerado = '';
-        relatorioIdNovo = 0;
+        const isRetificado = data.original.status === 'retificado';
+        relatorioFinalizado = isRetificado;
+        protocoloGerado = isRetificado ? (data.original.protocolo ?? '') : '';
+        relatorioIdNovo = isRetificado ? data.original.id : 0;
     });
 
     function abrirModalExtra() {
