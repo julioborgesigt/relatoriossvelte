@@ -1,4 +1,4 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { fail, redirect, isRedirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 function gerarSessionId(): string {
@@ -171,7 +171,7 @@ export const actions: Actions = {
             const redirecionarPara = url.searchParams.get('redirect') || '/plantao';
             throw redirect(303, redirecionarPara);
         } catch (err) {
-            if (err instanceof Response) throw err;
+            if (isRedirect(err)) throw err;
             console.error('Erro ao validar token:', err);
             return fail(500, { erro: 'Erro interno ao processar a solicitação.' });
         }
