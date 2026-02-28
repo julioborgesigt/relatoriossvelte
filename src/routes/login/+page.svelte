@@ -5,7 +5,8 @@
     let { data, form }: { data: PageData; form: ActionData } = $props();
 
     // Estado da autenticação
-    let etapa = $state<'matricula' | 'token'>(data.etapa ?? 'matricula');
+    const etapaInicial = data.etapa ?? 'matricula';
+    let etapa = $state<'matricula' | 'token'>(etapaInicial);
     let servidor = $state<{ nome: string; matricula: string; emailMascarado: string; email: string } | null>(null);
     let tokenDev = $state<string | undefined>(undefined);
     let carregando = $state(false);
