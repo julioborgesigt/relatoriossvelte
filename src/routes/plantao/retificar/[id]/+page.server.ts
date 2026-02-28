@@ -52,12 +52,8 @@ function gerarProtocolo(id: number): string {
     return `FT-${String(id).padStart(6, '0')}`;
 }
 
-function gerarCodigoRascunho(id: number): string {
-    return `R-${String(id).padStart(6, '0')}`;
-}
-
 export const actions: Actions = {
-    salvar: async ({ request, platform, locals, params }) => {
+    finalizar: async ({ request, platform, locals, params }) => {
         const db = platform?.env.remocoespcce;
         if (!db) return fail(500, { erro: 'Banco de dados não configurado.' });
 
@@ -66,7 +62,6 @@ export const actions: Actions = {
 
         const originalId = parseInt(params.id);
         const formData = await request.formData();
-        const acao = formData.get('acao')?.toString() || 'rascunho';
 
         const delegacia = formData.get('delegacia')?.toString().toUpperCase().trim() || '';
         const data_entrada = formData.get('data_entrada')?.toString() || '';
@@ -140,25 +135,21 @@ export const actions: Actions = {
         }
 
         const agora = new Date().toISOString();
-        const status = acao === 'finalizar' ? 'finalizado' : 'rascunho';
 
         try {
             const { meta } = await db
                 .prepare(`INSERT INTO plantoes (matricula_responsavel, nome_responsavel, delegacia, data_entrada, hora_entrada, data_saida, hora_saida, status, observacoes, q_bo, q_guias, q_apreensoes, q_presos, q_medidas, q_outros, retificacao_de, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-                .bind(usuario.matricula, usuario.nome, delegacia, data_entrada, hora_entrada, data_saida || null, hora_saida || null, status, observacoes || null, q_bo, q_guias, q_apreensoes, q_presos, q_medidas, q_outros, originalId, agora, agora)
+                .bind(usuario.matricula, usuario.nome, delegacia, data_entrada, hora_entrada, data_saida || null, hora_saida || null, 'finalizado', observacoes || null, q_bo, q_guias, q_apreensoes, q_presos, q_medidas, q_outros, originalId, agora, agora)
                 .run();
 
             const novoId = meta.last_row_id;
-            const protocolo = acao === 'finalizar' ? gerarProtocolo(novoId) : gerarCodigoRascunho(novoId);
+            const protocolo = gerarProtocolo(novoId);
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const batch: any[] = [
-                db.prepare(`UPDATE plantoes SET protocolo = ? WHERE id = ?`).bind(protocolo, novoId)
+                db.prepare(`UPDATE plantoes SET protocolo = ? WHERE id = ?`).bind(protocolo, novoId),
+                db.prepare(`UPDATE plantoes SET status = 'retificado' WHERE id = ?`).bind(originalId)
             ];
-
-            if (acao === 'finalizar') {
-                batch.push(db.prepare(`UPDATE plantoes SET status = 'retificado' WHERE id = ?`).bind(originalId));
-            }
 
             for (const membro of equipe) {
                 batch.push(db.prepare(`INSERT INTO plantoes_equipe (plantao_id, nome_servidor, matricula, cargo, classe, escala, data_entrada, hora_entrada, data_saida, hora_saida) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -172,12 +163,9 @@ export const actions: Actions = {
 
             await db.batch(batch);
 
-            if (acao === 'finalizar') {
-                return { sucesso: true, acao: 'finalizado', protocolo, id: novoId };
-            }
-
-            return { sucesso: true, mensagem: `Rascunho de retificação salvo! Protocolo: ${protocolo}`, protocolo };
+            throw redirect(303, `/plantao/imprimir/${novoId}`);
         } catch (err) {
+            if (err instanceof Response) throw err; // re-throw redirect
             console.error('Erro ao salvar retificação:', err);
             return fail(500, { erro: 'Erro ao salvar os dados. Tente novamente.' });
         }
