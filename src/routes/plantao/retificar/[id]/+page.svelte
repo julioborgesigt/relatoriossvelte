@@ -108,6 +108,17 @@
     const servidores = data.servidores ?? [];
     const delegacias = data.delegacias ?? [];
 
+    // Quando o usuário navega para uma Nova Retificação (mesmo componente,
+    // params diferentes), o SvelteKit reutiliza a instância e os $state
+    // persistem. Este $effect detecta a troca de relatório e reseta o estado
+    // de finalização para que o botão FINALIZAR apareça corretamente.
+    $effect(() => {
+        data.original.id; // dependência: re-executa quando o id muda
+        relatorioFinalizado = false;
+        protocoloGerado = '';
+        relatorioIdNovo = 0;
+    });
+
     function abrirModalExtra() {
         justificativaExtra = `O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial, conforme relatório de plantão ${protocoloGerado}.`;
         membrosExtraIncluidos = membrosExtraordinarios.map(m => m.nome);

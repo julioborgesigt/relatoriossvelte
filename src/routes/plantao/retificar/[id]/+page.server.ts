@@ -32,7 +32,8 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
     ]);
 
     if (!plantao) throw error(404, 'Relatório não encontrado.');
-    if (plantao.status !== 'finalizado') throw error(400, 'Apenas relatórios finalizados podem ser retificados.');
+    if (!['finalizado', 'retificado'].includes(plantao.status))
+        throw error(400, 'Apenas relatórios finalizados podem ser retificados.');
 
     return {
         original: plantao,
@@ -137,33 +138,35 @@ export const actions: Actions = {
         const agora = new Date().toISOString();
 
         try {
-            const { meta } = await db
-                .prepare(`INSERT INTO plantoes (matricula_responsavel, nome_responsavel, delegacia, data_entrada, hora_entrada, data_saida, hora_saida, status, observacoes, q_bo, q_guias, q_apreensoes, q_presos, q_medidas, q_outros, retificacao_de, criado_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-                .bind(usuario.matricula, usuario.nome, delegacia, data_entrada, hora_entrada, data_saida || null, hora_saida || null, 'finalizado', observacoes || null, q_bo, q_guias, q_apreensoes, q_presos, q_medidas, q_outros, originalId, agora, agora)
-                .run();
-
-            const novoId = meta.last_row_id;
-            const protocolo = gerarProtocolo(novoId);
+            // Busca o protocolo atual (mantido inalterado — o número não muda)
+            const atual = await db.prepare(`SELECT protocolo FROM plantoes WHERE id = ?`)
+                .bind(originalId).first<{ protocolo: string }>();
+            if (!atual) return fail(404, { erro: 'Relatório não encontrado.' });
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const batch: any[] = [
-                db.prepare(`UPDATE plantoes SET protocolo = ? WHERE id = ?`).bind(protocolo, novoId),
-                db.prepare(`UPDATE plantoes SET status = 'retificado' WHERE id = ?`).bind(originalId)
+                // Atualiza o registro original no lugar (sem criar novo)
+                db.prepare(`UPDATE plantoes SET matricula_responsavel=?, nome_responsavel=?, delegacia=?, data_entrada=?, hora_entrada=?, data_saida=?, hora_saida=?, status='retificado', observacoes=?, q_bo=?, q_guias=?, q_apreensoes=?, q_presos=?, q_medidas=?, q_outros=?, atualizado_em=? WHERE id=?`)
+                    .bind(usuario.matricula, usuario.nome, delegacia, data_entrada, hora_entrada, data_saida || null, hora_saida || null, observacoes || null, q_bo, q_guias, q_apreensoes, q_presos, q_medidas, q_outros, agora, originalId),
+                // Remove equipe e procedimentos antigos
+                db.prepare(`DELETE FROM plantoes_equipe WHERE plantao_id = ?`).bind(originalId),
+                db.prepare(`DELETE FROM plantoes_procedimentos WHERE plantao_id = ?`).bind(originalId)
             ];
 
             for (const membro of equipe) {
                 batch.push(db.prepare(`INSERT INTO plantoes_equipe (plantao_id, nome_servidor, matricula, cargo, classe, escala, data_entrada, hora_entrada, data_saida, hora_saida) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-                    .bind(novoId, membro.nome, membro.matricula || null, membro.cargo || null, membro.classe || null, membro.escala, membro.data_entrada, membro.hora_entrada, membro.data_saida || null, membro.hora_saida || null));
+                    .bind(originalId, membro.nome, membro.matricula || null, membro.cargo || null, membro.classe || null, membro.escala, membro.data_entrada, membro.hora_entrada, membro.data_saida || null, membro.hora_saida || null));
             }
 
             for (const proc of procedimentos) {
                 batch.push(db.prepare(`INSERT INTO plantoes_procedimentos (plantao_id, tipo, numero, natureza, envolvidos, resumo, vitimas_json, suspeitos_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-                    .bind(novoId, proc.tipo, proc.numero || null, proc.natureza, proc.envolvidos || null, proc.resumo || null, proc.vitimas_json, proc.suspeitos_json));
+                    .bind(originalId, proc.tipo, proc.numero || null, proc.natureza, proc.envolvidos || null, proc.resumo || null, proc.vitimas_json, proc.suspeitos_json));
             }
 
             await db.batch(batch);
 
-            return { sucesso: true, acao: 'finalizado', protocolo, id: novoId };
+            // Mesmo id e protocolo — o número do relatório não muda
+            return { sucesso: true, acao: 'finalizado', protocolo: atual.protocolo, id: originalId };
         } catch (err) {
             console.error('Erro ao salvar retificação:', err);
             return fail(500, { erro: 'Erro ao salvar os dados. Tente novamente.' });
