@@ -1,4 +1,4 @@
-import { fail, redirect, isRedirect } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ platform, locals }) => {
@@ -150,12 +150,11 @@ export const actions: Actions = {
             }
 
             if (acao === 'finalizar') {
-                throw redirect(303, `/plantao/imprimir/${plantaoId}`);
+                return { sucesso: true, acao: 'finalizado', protocolo, id: plantaoId };
             }
 
             return { sucesso: true, mensagem: `Rascunho salvo! Protocolo: ${protocolo}`, protocolo };
         } catch (err) {
-            if (isRedirect(err)) throw err;
             console.error('Erro ao salvar plantão:', err);
             return fail(500, { erro: 'Erro ao salvar os dados. Tente novamente.' });
         }

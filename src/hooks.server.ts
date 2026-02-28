@@ -49,5 +49,10 @@ export const handle: Handle = async ({ event, resolve }) => {
         throw redirect(302, loginUrl);
     }
 
+    // Admin (matrícula 00000000) acessa somente o dashboard
+    if (event.locals.usuario?.matricula === '00000000' && pathname === '/plantao') {
+        throw redirect(302, '/dashboard');
+    }
+
     return resolve(event);
 };
