@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { PageData } from './$types';
     let { data }: { data: PageData } = $props();
-    const p = data.plantao;
+    const p = $derived(data.plantao);
     const ano = new Date().getFullYear();
 
     function formatarData(d: string | null | undefined): string {
