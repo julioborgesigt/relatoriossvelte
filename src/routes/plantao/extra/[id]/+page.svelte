@@ -12,8 +12,22 @@
     );
     let nomeDiretor = $state('');
 
+    // Seleção de quais membros incluir na impressão (todos por padrão)
+    let membrosIncluidos = $state<string[]>(equipeExtra.map(m => m.nome_servidor));
+
+    function toggleMembro(nome: string) {
+        if (membrosIncluidos.includes(nome)) {
+            membrosIncluidos = membrosIncluidos.filter(n => n !== nome);
+        } else {
+            membrosIncluidos = [...membrosIncluidos, nome];
+        }
+    }
+
+    // Equipe filtrada para o relatório impresso
+    let equipeImpressao = $derived(equipeExtra.filter(m => membrosIncluidos.includes(m.nome_servidor)));
+
     function confirmarConfig() {
-        if (!nomeDiretor.trim()) return;
+        if (!nomeDiretor.trim() || membrosIncluidos.length === 0) return;
         mostrarModalConfig = false;
     }
 
@@ -100,6 +114,31 @@
             <p class="text-slate-500 text-[11px] mb-4">&nbsp;</p>
         {/if}
 
+        <!-- Servidores a incluir -->
+        {#if equipeExtra.length > 0}
+            <label class="block text-[#c5a059] text-xs font-bold uppercase mb-2">
+                Servidores em Escala Extraordinária
+            </label>
+            <div class="bg-[#0a192f] border border-[#c5a059]/20 rounded-lg p-3 mb-4 space-y-2 max-h-40 overflow-y-auto">
+                {#each equipeExtra as membro}
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input
+                            type="checkbox"
+                            checked={membrosIncluidos.includes(membro.nome_servidor)}
+                            onchange={() => toggleMembro(membro.nome_servidor)}
+                            class="accent-[#c5a059] w-4 h-4"
+                        />
+                        <span class="text-white text-xs uppercase group-hover:text-[#c5a059] transition">
+                            {membro.nome_servidor}
+                        </span>
+                    </label>
+                {/each}
+            </div>
+            {#if membrosIncluidos.length === 0}
+                <p class="text-red-400 text-[11px] mb-3">Selecione ao menos um servidor.</p>
+            {/if}
+        {/if}
+
         <!-- Ações -->
         <div class="flex gap-3 justify-end">
             <a
@@ -110,7 +149,7 @@
             </a>
             <button
                 onclick={confirmarConfig}
-                disabled={!nomeDiretor.trim()}
+                disabled={!nomeDiretor.trim() || membrosIncluidos.length === 0}
                 class="bg-[#c5a059] text-[#0a192f] px-6 py-2 rounded-lg font-black text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition"
             >
                 Gerar Relatório
@@ -183,12 +222,12 @@
         <section class="mb-4">
             <h2 class="bg-[#f3f3f3] px-2 py-1 font-bold uppercase text-[10px] border border-black">
                 Servidores em Escala Extraordinária
-                <span class="font-normal text-gray-500 ml-2">(Total: {equipeExtra.length})</span>
+                <span class="font-normal text-gray-500 ml-2">(Total: {equipeImpressao.length})</span>
             </h2>
 
-            {#if equipeExtra.length === 0}
+            {#if equipeImpressao.length === 0}
                 <div class="border border-t-0 border-black p-4 text-center text-gray-500 text-[10px]">
-                    Nenhum servidor em escala extraordinária neste plantão.
+                    Nenhum servidor selecionado para este relatório.
                 </div>
             {:else}
                 <table class="w-full border-collapse border border-t-0 border-black text-[10px]">
@@ -202,7 +241,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {#each equipeExtra as membro}
+                        {#each equipeImpressao as membro}
                             <tr>
                                 <td class="border border-black px-2 py-1.5 uppercase font-medium">{membro.nome_servidor}</td>
                                 <td class="border border-black px-2 py-1.5 text-gray-700">{membro.cargo ?? ''} {membro.classe ? `— ${membro.classe}` : ''}</td>
