@@ -3,17 +3,25 @@
     let { data }: { data: PageData } = $props();
     const p = data.plantao;
     const equipeExtra = data.equipeExtra;
+    const config = data.config;
     const ano = new Date().getFullYear();
 
     // ── Estado do modal de configuração ──────────────────────────────────────
-    let mostrarModalConfig = $state(true);
+    // Se vier configurado via URL params (da página de retificação), pula o modal
+    let mostrarModalConfig = $state(!config.dir);
     let justificativa = $state(
+        config.just ||
         `O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial, conforme relatório de plantão ${p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`}.`
     );
-    let nomeDiretor = $state('');
+    let nomeDiretor = $state(config.dir);
 
-    // Seleção de quais membros incluir na impressão (todos por padrão)
-    let membrosIncluidos = $state<string[]>(equipeExtra.map(m => m.nome_servidor));
+    // Seleção de quais membros incluir na impressão
+    // Se vier lista via URL, filtra; caso contrário inclui todos
+    let membrosIncluidos = $state<string[]>(
+        config.mb
+            ? config.mb.split(',').filter(n => equipeExtra.some(m => m.nome_servidor === n))
+            : equipeExtra.map(m => m.nome_servidor)
+    );
 
     function toggleMembro(nome: string) {
         if (membrosIncluidos.includes(nome)) {
