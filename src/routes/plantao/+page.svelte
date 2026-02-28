@@ -62,6 +62,8 @@
     // UI states
     let carregando = $state(false);
     let mostrarModalRascunho = $state(false);
+    let mostrarModalRetificar = $state(false);
+    let codigoRetificar = $state('');
     let isDirty = $state(false);
 
     // Estado pós-finalização
@@ -224,6 +226,43 @@
 {#if form && 'sucesso' in form && form.sucesso}
     <div class="fixed top-5 right-5 z-50 bg-emerald-900 border border-emerald-500 text-emerald-200 px-5 py-3 rounded-xl shadow-2xl font-bold text-sm">
         ✓ {(form as any).mensagem}
+    </div>
+{/if}
+
+<!-- Modal: Retificar relatório de plantão passado -->
+{#if mostrarModalRetificar}
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div class="bg-[#0d2137] border border-amber-500/40 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h2 class="text-amber-400 font-black uppercase text-sm mb-1">✏️ Retificar Relatório</h2>
+            <p class="text-slate-400 text-xs mb-4">
+                Informe o protocolo do relatório finalizado que deseja retificar.<br/>
+                <span class="font-mono text-slate-500">Exemplo: FT-000042</span>
+            </p>
+            <form onsubmit={(e) => {
+                e.preventDefault();
+                const val = codigoRetificar.trim().toUpperCase();
+                const matchFT = val.match(/^FT-?(\d+)$/);
+                const matchNum = val.match(/^(\d+)$/);
+                const id = matchFT ? parseInt(matchFT[1]) : matchNum ? parseInt(matchNum[1]) : NaN;
+                if (!isNaN(id) && id > 0) {
+                    mostrarModalRetificar = false;
+                    window.location.href = `/plantao/retificar/${id}`;
+                }
+            }}>
+                <input type="text" bind:value={codigoRetificar} placeholder="FT-000001" required
+                    class="w-full bg-white/10 border border-white/20 text-white p-3 rounded-lg font-mono text-center text-lg mb-4 outline-none focus:ring-2 focus:ring-amber-500 uppercase" />
+                <div class="flex gap-2">
+                    <button type="submit"
+                        class="flex-1 bg-amber-500 text-black font-bold py-2 rounded-lg text-sm uppercase hover:brightness-110 transition">
+                        ABRIR
+                    </button>
+                    <button type="button" onclick={() => { mostrarModalRetificar = false; codigoRetificar = ''; }}
+                        class="flex-1 border border-slate-600 text-slate-400 py-2 rounded-lg text-sm uppercase hover:bg-slate-800 transition">
+                        CANCELAR
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 {/if}
 
@@ -435,28 +474,20 @@
                                 </p>
                             {/if}
 
-                            <!-- Horário individual expandível -->
+                            <!-- Horário individual expandível (apenas horas — datas herdadas do plantão) -->
                             {#if membro.mostrarHorario}
-                                <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 bg-black/20 p-3 rounded-lg border border-slate-700">
+                                <div class="mt-2 grid grid-cols-2 gap-2 bg-black/20 p-2.5 rounded-lg border border-slate-700">
                                     <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Entrada (Data)</label>
-                                        <input type="date" name="equipe_{idx}_data_entrada" bind:value={membro.data_entrada}
-                                            class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
-                                    </div>
-                                    <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Entrada (Hora)</label>
+                                        <label class="text-slate-400 text-[10px] uppercase">Entrada — Hora</label>
                                         <input type="time" name="equipe_{idx}_hora_entrada" bind:value={membro.hora_entrada}
                                             class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                                        <input type="hidden" name="equipe_{idx}_data_entrada" value={data_entrada} />
                                     </div>
                                     <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Saída (Data)</label>
-                                        <input type="date" name="equipe_{idx}_data_saida" bind:value={membro.data_saida}
-                                            class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
-                                    </div>
-                                    <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Saída (Hora)</label>
+                                        <label class="text-slate-400 text-[10px] uppercase">Saída — Hora</label>
                                         <input type="time" name="equipe_{idx}_hora_saida" bind:value={membro.hora_saida}
                                             class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                                        <input type="hidden" name="equipe_{idx}_data_saida" value={data_saida} />
                                     </div>
                                 </div>
                             {/if}
@@ -636,12 +667,17 @@
                         ↩ RETOMAR RASCUNHO
                     </button>
 
-                    <!-- Retificar (só após finalização) -->
+                    <!-- Retificar: link direto se já finalizado, modal de protocolo caso contrário -->
                     {#if relatorioFinalizado}
                         <a href="/plantao/retificar/{relatorioId}"
                             class="px-4 py-2 bg-amber-500 text-black text-xs font-black rounded-lg hover:brightness-110 transition">
                             ✏️ RETIFICAR RELATÓRIO
                         </a>
+                    {:else}
+                        <button type="button" onclick={() => mostrarModalRetificar = true}
+                            class="px-4 py-2 bg-amber-500/80 text-black text-xs font-black rounded-lg hover:bg-amber-500 transition">
+                            ✏️ RETIFICAR RELATÓRIO
+                        </button>
                     {/if}
 
                     <!-- Finalizar (antes da finalização) -->

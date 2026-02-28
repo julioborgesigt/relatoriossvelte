@@ -267,7 +267,8 @@
             return async ({ result, update }) => {
                 carregando = false;
                 if (result.type === 'redirect') {
-                    import('$app/navigation').then(m => m.goto(result.location));
+                    // Abre a página de impressão em nova aba (igual ao fluxo principal)
+                    window.open(result.location, '_blank');
                 } else {
                     await update({ reset: false });
                 }
@@ -378,27 +379,20 @@
                                 <p class="text-xs text-[#c5a059]/70 mt-1 ml-1">{membro.cargo} {membro.classe ? `— ${membro.classe}` : ''}</p>
                             {/if}
 
+                            <!-- Horário individual (apenas horas — datas herdadas do plantão) -->
                             {#if membro.mostrarHorario}
-                                <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 bg-black/20 p-3 rounded-lg border border-slate-700">
+                                <div class="mt-2 grid grid-cols-2 gap-2 bg-black/20 p-2.5 rounded-lg border border-slate-700">
                                     <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Entrada (Data)</label>
-                                        <input type="date" name="equipe_{idx}_data_entrada" bind:value={membro.data_entrada}
-                                            class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
-                                    </div>
-                                    <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Entrada (Hora)</label>
+                                        <label class="text-slate-400 text-[10px] uppercase">Entrada — Hora</label>
                                         <input type="time" name="equipe_{idx}_hora_entrada" bind:value={membro.hora_entrada}
                                             class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                                        <input type="hidden" name="equipe_{idx}_data_entrada" value={data_entrada} />
                                     </div>
                                     <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Saída (Data)</label>
-                                        <input type="date" name="equipe_{idx}_data_saida" bind:value={membro.data_saida}
-                                            class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
-                                    </div>
-                                    <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Saída (Hora)</label>
+                                        <label class="text-slate-400 text-[10px] uppercase">Saída — Hora</label>
                                         <input type="time" name="equipe_{idx}_hora_saida" bind:value={membro.hora_saida}
                                             class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                                        <input type="hidden" name="equipe_{idx}_data_saida" value={data_saida} />
                                     </div>
                                 </div>
                             {/if}
