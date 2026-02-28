@@ -724,10 +724,11 @@
                     </button>
 
                     {#if relatorioFinalizado}
-                        <a href="/plantao/retificar/{relatorioIdNovo}"
+                        <button type="button"
+                            onclick={() => { relatorioFinalizado = false; }}
                             class="px-4 py-2.5 bg-amber-700 text-white text-xs font-black rounded-lg hover:bg-amber-600 transition">
                             ✏️ NOVA RETIFICAÇÃO
-                        </a>
+                        </button>
                     {/if}
                 </div>
 
