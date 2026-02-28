@@ -519,48 +519,41 @@
                                 </div>
                             </div>
 
-                            <!-- Vítimas -->
-                            <div class="mb-3">
-                                <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Vítimas / Ofendidos</label>
-                                {#each proc.vitimas as vitima, vi (vitima.id)}
-                                    <div class="flex gap-2 mb-1">
-                                        <input type="text" name="proc_{idx}_vitima_{vi}" bind:value={vitima.texto}
-                                            placeholder="Nome e qualificação..."
-                                            class="flex-1 bg-black/20 border border-current/20 text-white p-2 rounded text-xs outline-none uppercase" />
-                                        {#if proc.vitimas.length > 1}
-                                            <button type="button" onclick={() => removerVitima(proc.id, vitima.id)}
-                                                class="text-current opacity-50 hover:opacity-100 px-2 text-xs transition">✕</button>
-                                        {/if}
-                                    </div>
-                                {/each}
-                                <button type="button" onclick={() => adicionarVitima(proc.id)}
-                                    class="text-[10px] opacity-60 hover:opacity-100 transition">+ Adicionar vítima</button>
-                            </div>
+                            <!-- Vítimas e Suspeitos lado a lado -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Vítimas / Ofendidos</label>
+                                    {#each proc.vitimas as vitima, vi (vitima.id)}
+                                        <div class="flex gap-1 mb-1">
+                                            <input type="text" name="proc_{idx}_vitima_{vi}" bind:value={vitima.texto}
+                                                placeholder="Nome e qualificação..."
+                                                class="flex-1 bg-black/20 border border-current/20 text-white p-2 rounded text-xs outline-none uppercase" />
+                                            {#if proc.vitimas.length > 1}
+                                                <button type="button" onclick={() => removerVitima(proc.id, vitima.id)}
+                                                    class="text-current opacity-50 hover:opacity-100 px-2 text-xs transition">✕</button>
+                                            {/if}
+                                        </div>
+                                    {/each}
+                                    <button type="button" onclick={() => adicionarVitima(proc.id)}
+                                        class="text-[10px] opacity-60 hover:opacity-100 transition">+ Adicionar vítima</button>
+                                </div>
 
-                            <!-- Suspeitos -->
-                            <div class="mb-3">
-                                <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Suspeitos / Indiciados</label>
-                                {#each proc.suspeitos as suspeito, si (suspeito.id)}
-                                    <div class="flex gap-2 mb-1">
-                                        <input type="text" name="proc_{idx}_suspeito_{si}" bind:value={suspeito.texto}
-                                            placeholder="Nome e qualificação..."
-                                            class="flex-1 bg-black/20 border border-current/20 text-white p-2 rounded text-xs outline-none uppercase" />
-                                        {#if proc.suspeitos.length > 1}
-                                            <button type="button" onclick={() => removerSuspeito(proc.id, suspeito.id)}
-                                                class="text-current opacity-50 hover:opacity-100 px-2 text-xs transition">✕</button>
-                                        {/if}
-                                    </div>
-                                {/each}
-                                <button type="button" onclick={() => adicionarSuspeito(proc.id)}
-                                    class="text-[10px] opacity-60 hover:opacity-100 transition">+ Adicionar suspeito</button>
-                            </div>
-
-                            <!-- Resumo -->
-                            <div>
-                                <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Resumo dos Fatos</label>
-                                <textarea name="proc_{idx}_resumo" bind:value={proc.resumo} rows="3"
-                                    placeholder="Descreva os fatos em detalhes..."
-                                    class="w-full bg-black/20 border border-current/20 text-white p-2 rounded-lg text-sm outline-none resize-y uppercase"></textarea>
+                                <div>
+                                    <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Suspeitos / Indiciados</label>
+                                    {#each proc.suspeitos as suspeito, si (suspeito.id)}
+                                        <div class="flex gap-1 mb-1">
+                                            <input type="text" name="proc_{idx}_suspeito_{si}" bind:value={suspeito.texto}
+                                                placeholder="Nome e qualificação..."
+                                                class="flex-1 bg-black/20 border border-current/20 text-white p-2 rounded text-xs outline-none uppercase" />
+                                            {#if proc.suspeitos.length > 1}
+                                                <button type="button" onclick={() => removerSuspeito(proc.id, suspeito.id)}
+                                                    class="text-current opacity-50 hover:opacity-100 px-2 text-xs transition">✕</button>
+                                            {/if}
+                                        </div>
+                                    {/each}
+                                    <button type="button" onclick={() => adicionarSuspeito(proc.id)}
+                                        class="text-[10px] opacity-60 hover:opacity-100 transition">+ Adicionar suspeito</button>
+                                </div>
                             </div>
                         </div>
                     {/each}
