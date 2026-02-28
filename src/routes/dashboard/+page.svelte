@@ -142,11 +142,16 @@
                                         <div class="flex justify-center gap-1">
                                             <a href="/plantao/imprimir/{p.id}"
                                                 class="text-[10px] font-bold px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition"
-                                                title="Ver/Imprimir">🖨</a>
-                                            {#if p.status === 'finalizado'}
+                                                title="Ver/Imprimir">🖨 Imprimir</a>
+                                            {#if p.status === 'finalizado' || p.status === 'retificado'}
                                                 <a href="/plantao/extra/{p.id}"
                                                     class="text-[10px] font-bold px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded text-blue-600 transition"
-                                                    title="Relatório Extra">📋</a>
+                                                    title="Relatório Extra">📋 Extra</a>
+                                            {/if}
+                                            {#if p.status === 'finalizado'}
+                                                <a href="/plantao/retificar/{p.id}"
+                                                    class="text-[10px] font-bold px-2 py-1 bg-amber-50 hover:bg-amber-100 rounded text-amber-700 transition"
+                                                    title="Retificar Relatório">✏️ Retificar</a>
                                             {/if}
                                         </div>
                                     </td>
@@ -175,15 +180,21 @@
                                 {formatarData(p.data_entrada)} {p.hora_entrada ?? ''}
                                 {p.data_saida ? ` → ${formatarData(p.data_saida)} ${p.hora_saida ?? ''}` : ''}
                             </p>
-                            <div class="flex gap-2 mt-3">
+                            <div class="flex gap-2 mt-3 flex-wrap">
                                 <a href="/plantao/imprimir/{p.id}"
                                     class="flex-1 text-center text-xs font-bold py-1.5 bg-slate-100 rounded text-slate-600 hover:bg-slate-200 transition">
-                                    🖨 Ver/Imprimir
+                                    🖨 Imprimir
                                 </a>
-                                {#if p.status === 'finalizado'}
+                                {#if p.status === 'finalizado' || p.status === 'retificado'}
                                     <a href="/plantao/extra/{p.id}"
                                         class="flex-1 text-center text-xs font-bold py-1.5 bg-blue-50 rounded text-blue-600 hover:bg-blue-100 transition">
                                         📋 Extra
+                                    </a>
+                                {/if}
+                                {#if p.status === 'finalizado'}
+                                    <a href="/plantao/retificar/{p.id}"
+                                        class="flex-1 text-center text-xs font-bold py-1.5 bg-amber-50 rounded text-amber-700 hover:bg-amber-100 transition">
+                                        ✏️ Retificar
                                     </a>
                                 {/if}
                             </div>

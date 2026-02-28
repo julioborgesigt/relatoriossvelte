@@ -37,12 +37,19 @@
 
 <!-- Botões de ação (não aparecem na impressão) -->
 <div class="no-print fixed bottom-6 right-6 flex gap-3 z-50">
-    <a href="/plantao" class="bg-slate-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-slate-600 transition">
-        ← Novo Plantão
+    <a href="/dashboard" class="bg-slate-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-slate-600 transition">
+        ← Dashboard
     </a>
-    <a href="/plantao/extra/{p.id}" class="bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-blue-600 transition">
-        📋 Extra
-    </a>
+    {#if p.status === 'finalizado' || p.status === 'retificado'}
+        <a href="/plantao/extra/{p.id}" class="bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-blue-600 transition">
+            📋 Extra
+        </a>
+    {/if}
+    {#if p.status === 'finalizado'}
+        <a href="/plantao/retificar/{p.id}" class="bg-amber-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-amber-500 transition">
+            ✏️ Retificar
+        </a>
+    {/if}
     <button onclick={() => window.print()}
         class="bg-[#c5a059] text-[#0a192f] px-6 py-2 rounded-full font-black shadow-xl hover:brightness-110 transition text-sm">
         🖨 IMPRIMIR PDF
