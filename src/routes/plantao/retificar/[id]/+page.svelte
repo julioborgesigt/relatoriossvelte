@@ -94,17 +94,9 @@
     let nextEnvolvidoId = $state(envolvidoCounter);
 
     let carregando = $state(false);
-    let isDirty = $state(false);
-
-    // Estado pós-finalização da retificação
-    let relatorioFinalizado = $state(false);
-    let protocoloGerado = $state('');
-    let relatorioIdNovo = $state(0);
 
     const servidores = data.servidores ?? [];
     const delegacias = data.delegacias ?? [];
-
-    function marcarDirty() { isDirty = true; }
 
     function adicionarMembro() {
         equipe.push({
@@ -112,13 +104,11 @@
             escala: 'Normal', data_entrada: data_entrada, hora_entrada: hora_entrada,
             data_saida: data_saida, hora_saida: hora_saida, mostrarHorario: false
         });
-        marcarDirty();
     }
 
     function removerMembro(id: number) {
         const idx = equipe.findIndex(m => m.id === id);
         if (idx > 0) equipe.splice(idx, 1);
-        marcarDirty();
     }
 
     function buscarServidor(nome: string, membroId: number) {
@@ -134,7 +124,6 @@
                 membro.lotacao  = (encontrado as any).lotacao || '';
             }
         }
-        marcarDirty();
     }
 
     function adicionarProcedimento(tipo: TipoProc) {
@@ -144,13 +133,11 @@
             vitimas: [{ id: nextEnvolvidoId++, texto: '' }],
             suspeitos: [{ id: nextEnvolvidoId++, texto: '' }]
         });
-        marcarDirty();
     }
 
     function removerProcedimento(id: number) {
         const idx = procedimentos.findIndex(p => p.id === id);
         if (idx >= 0) procedimentos.splice(idx, 1);
-        marcarDirty();
     }
 
     function adicionarVitima(procId: number) {
@@ -204,39 +191,13 @@
         }
     }
 
-    $effect(() => {
-        if (form && 'sucesso' in form && form.sucesso) {
-            isDirty = false;
-        }
-        if (form && 'acao' in form && (form as any).acao === 'finalizado') {
-            relatorioFinalizado = true;
-            protocoloGerado = (form as any).protocolo ?? '';
-            relatorioIdNovo = (form as any).id ?? 0;
-            // Abre impressão em nova aba automaticamente ao finalizar
-            if (relatorioIdNovo) window.open(`/plantao/imprimir/${relatorioIdNovo}`, '_blank');
-        }
-    });
 </script>
 
 <svelte:head>
     <title>Retificação {data.original.protocolo} — DPI SUL</title>
 </svelte:head>
 
-<!-- Toast de sucesso -->
-{#if form && 'sucesso' in form && form.sucesso}
-    <div class="fixed top-5 right-5 z-50 bg-emerald-900 border border-emerald-500 text-emerald-200 px-5 py-3 rounded-xl shadow-2xl font-bold text-sm">
-        ✓ {(form as any).mensagem}
-    </div>
-{/if}
-
-<!-- Indicador de alterações não salvas -->
-{#if isDirty}
-    <div class="fixed top-0 left-0 right-0 z-40 bg-yellow-600 text-yellow-900 text-center text-xs font-bold py-1 tracking-wider">
-        ⚠ Alterações não salvas
-    </div>
-{/if}
-
-<div class="min-h-screen bg-[#0a192f] p-4 md:p-8 text-white font-sans" class:pt-8={isDirty}>
+<div class="min-h-screen bg-[#0a192f] p-4 md:p-8 text-white font-sans">
     <div class="max-w-4xl mx-auto">
 
         <!-- Banner de retificação -->
@@ -276,13 +237,13 @@
             </div>
         {/if}
 
-        <form method="POST" action="?/salvar" use:enhance={() => {
+        <form method="POST" action="?/finalizar" use:enhance={() => {
             carregando = true;
             return async ({ result, update }) => {
                 carregando = false;
                 await update({ reset: false });
             };
-        }} oninput={marcarDirty}>
+        }}>
 
             <!-- ── Seção 1: Unidade e Período ── -->
             <section class="mb-6">
@@ -603,56 +564,18 @@
                     class="w-full bg-black/20 border border-slate-700 text-white placeholder-slate-600 p-3 rounded-xl outline-none resize-y text-sm focus:ring-2 focus:ring-[#c5a059] uppercase"></textarea>
             </section>
 
-            <!-- ── Barra de ações unificada ── -->
+            <!-- ── Barra de ações ── -->
             <div class="pt-6 border-t border-[#c5a059]/30">
-                <div class="flex flex-wrap justify-center gap-2">
-
-                    <!-- Salvar Rascunho -->
-                    <button type="submit" name="acao" value="rascunho"
-                        disabled={carregando || relatorioFinalizado}
-                        class="px-4 py-2 border border-slate-500 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                        💾 SALVAR RASCUNHO
+                <div class="flex justify-center">
+                    <button type="submit"
+                        disabled={carregando}
+                        class="px-8 py-3 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-sm font-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider">
+                        {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RETIFICAÇÃO'}
                     </button>
-
-                    <!-- Finalizar Retificação (antes de finalizar) -->
-                    {#if !relatorioFinalizado}
-                        <button type="submit" name="acao" value="finalizar"
-                            disabled={carregando}
-                            class="px-4 py-2 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-xs font-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                            {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RETIFICAÇÃO'}
-                        </button>
-                    {/if}
-
-                    <!-- Imprimir Plantão (habilitado após finalização) -->
-                    <a href={relatorioFinalizado ? `/plantao/imprimir/${relatorioIdNovo}` : '#'}
-                        target={relatorioFinalizado ? '_blank' : undefined}
-                        title={relatorioFinalizado ? 'Abrir relatório retificado para impressão' : 'Finalize a retificação primeiro'}
-                        class="px-4 py-2 bg-emerald-700 text-white text-xs font-black rounded-lg transition
-                               {relatorioFinalizado ? 'hover:bg-emerald-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
-                        🖨 PLANTÃO
-                    </a>
-
-                    <!-- Relatório Extra (habilitado após finalização) -->
-                    <a href={relatorioFinalizado ? `/plantao/extra/${relatorioIdNovo}` : '#'}
-                        target={relatorioFinalizado ? '_blank' : undefined}
-                        title={relatorioFinalizado ? 'Abrir relatório extra retificado' : 'Finalize a retificação primeiro'}
-                        class="px-4 py-2 bg-cyan-700 text-white text-xs font-black rounded-lg transition
-                               {relatorioFinalizado ? 'hover:bg-cyan-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
-                        📋 EXTRA
-                    </a>
                 </div>
-
-                <!-- Protocolo pós-finalização -->
-                {#if relatorioFinalizado}
-                    <p class="text-center mt-3 font-mono text-emerald-400 font-black text-sm tracking-widest">
-                        ✅ {protocoloGerado} — Retificação finalizada
-                        <a href="/plantao" class="ml-4 text-[10px] border border-slate-600 text-slate-400 px-3 py-1 rounded-lg hover:bg-slate-800 transition font-sans font-bold uppercase">+ Novo Relatório</a>
-                    </p>
-                {:else}
-                    <p class="text-slate-600 text-[10px] text-center mt-2 uppercase tracking-wider">
-                        🖨 PLANTÃO e 📋 EXTRA serão habilitados após a finalização
-                    </p>
-                {/if}
+                <p class="text-slate-600 text-[10px] text-center mt-2 uppercase tracking-wider">
+                    Ao finalizar, o relatório original será marcado como retificado e a impressão abrirá automaticamente.
+                </p>
             </div>
         </form>
     </div>
