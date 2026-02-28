@@ -5,6 +5,19 @@
     const equipeExtra = data.equipeExtra;
     const ano = new Date().getFullYear();
 
+    // ── Estado do modal de configuração ──────────────────────────────────────
+    let mostrarModalConfig = $state(true);
+    let justificativa = $state(
+        `O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial, conforme relatório de plantão ${p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`}.`
+    );
+    let nomeDiretor = $state('');
+
+    function confirmarConfig() {
+        if (!nomeDiretor.trim()) return;
+        mostrarModalConfig = false;
+    }
+
+    // ── Utilitários ───────────────────────────────────────────────────────────
     function formatarData(d: string | null | undefined): string {
         if (!d) return '—';
         const [y, m, dd] = d.split('-');
@@ -41,19 +54,93 @@
     </style>
 </svelte:head>
 
-<!-- Botões (não imprimem) -->
+<!-- ══ MODAL DE CONFIGURAÇÃO ════════════════════════════════════════════════ -->
+{#if mostrarModalConfig}
+<div class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div class="bg-[#0d2340] border border-[#c5a059]/40 rounded-xl p-6 w-full max-w-lg shadow-2xl">
+
+        <h3 class="text-[#c5a059] font-bold uppercase text-sm mb-1">
+            Configurar Relatório Extra
+        </h3>
+        <p class="text-slate-400 text-xs mb-5">
+            Preencha os campos antes de gerar o relatório para impressão.
+        </p>
+
+        <!-- Justificativa -->
+        <label class="block text-[#c5a059] text-xs font-bold uppercase mb-1">
+            Justificativa do Serviço Extraordinário
+        </label>
+        <textarea
+            bind:value={justificativa}
+            rows="4"
+            placeholder="Descreva a justificativa para o serviço extraordinário..."
+            class="w-full bg-[#0a192f] border border-[#c5a059]/30 rounded-lg p-3 text-white text-sm resize-none mb-4 focus:outline-none focus:border-[#c5a059] placeholder-slate-600"
+        ></textarea>
+
+        <!-- Nome do Diretor -->
+        <label class="block text-[#c5a059] text-xs font-bold uppercase mb-1">
+            Diretor / Delegado Signatário <span class="text-red-400">*</span>
+        </label>
+        <input
+            bind:value={nomeDiretor}
+            type="text"
+            list="sugestoes-diretor"
+            placeholder="Nome completo do diretor ou delegado"
+            class="w-full bg-[#0a192f] border border-[#c5a059]/30 rounded-lg p-3 text-white text-sm mb-1 focus:outline-none focus:border-[#c5a059] placeholder-slate-600"
+        />
+        <!-- Sugestão automática com o responsável do plantão -->
+        <datalist id="sugestoes-diretor">
+            {#if p.nome_responsavel}
+                <option value={p.nome_responsavel}></option>
+            {/if}
+        </datalist>
+        {#if !nomeDiretor.trim()}
+            <p class="text-red-400 text-[11px] mb-4">Campo obrigatório para gerar o relatório.</p>
+        {:else}
+            <p class="text-slate-500 text-[11px] mb-4">&nbsp;</p>
+        {/if}
+
+        <!-- Ações -->
+        <div class="flex gap-3 justify-end">
+            <a
+                href="/plantao/imprimir/{p.id}"
+                class="px-5 py-2 text-slate-400 text-sm hover:text-white transition rounded-lg"
+            >
+                ← Voltar
+            </a>
+            <button
+                onclick={confirmarConfig}
+                disabled={!nomeDiretor.trim()}
+                class="bg-[#c5a059] text-[#0a192f] px-6 py-2 rounded-lg font-black text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition"
+            >
+                Gerar Relatório
+            </button>
+        </div>
+    </div>
+</div>
+{/if}
+
+<!-- ══ BOTÕES DE AÇÃO (não aparecem na impressão) ════════════════════════════ -->
+{#if !mostrarModalConfig}
 <div class="no-print fixed bottom-6 right-6 flex gap-3 z-50">
     <a href="/plantao/imprimir/{p.id}"
         class="bg-slate-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-slate-600 transition">
         ← Relatório Principal
     </a>
+    <button
+        onclick={() => mostrarModalConfig = true}
+        class="bg-slate-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-slate-500 transition">
+        ✏️ Ajustar
+    </button>
     <button onclick={() => window.print()}
         class="bg-[#c5a059] text-[#0a192f] px-6 py-2 rounded-full font-black shadow-xl hover:brightness-110 transition text-sm">
         🖨 IMPRIMIR PDF
     </button>
 </div>
+{/if}
 
-<!-- Documento A4 -->
+<!-- ══ DOCUMENTO A4 ══════════════════════════════════════════════════════════ -->
+{#if !mostrarModalConfig}
 <div class="bg-white min-h-screen p-0">
     <div class="max-w-[210mm] mx-auto px-[12mm] py-[10mm] text-black text-[11px]">
 
@@ -139,9 +226,8 @@
         <section class="mb-4">
             <h2 class="bg-[#f3f3f3] px-2 py-1 font-bold uppercase text-[10px] border border-black">Justificativa do Serviço Extraordinário</h2>
             <div class="border border-t-0 border-black p-3 min-h-16 text-[10px]">
-                <p class="text-gray-400 italic text-[9px]">
-                    O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial,
-                    conforme relatório de plantão {p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`}.
+                <p class="text-justify">
+                    {justificativa}
                 </p>
             </div>
         </section>
@@ -156,7 +242,7 @@
             </div>
             <div>
                 <div class="inline-block border-t border-black px-12 pt-2 text-[10px] uppercase font-bold">
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    {nomeDiretor.toUpperCase()}
                 </div>
                 <p class="text-[9px] text-gray-500 mt-1">Diretor / Delegado</p>
             </div>
@@ -168,3 +254,4 @@
         </footer>
     </div>
 </div>
+{/if}
