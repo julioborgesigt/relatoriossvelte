@@ -94,9 +94,20 @@
     let nextEnvolvidoId = $state(envolvidoCounter);
 
     let carregando = $state(false);
+    let relatorioFinalizado = $state(false);
+    let protocoloGerado = $state('');
+    let relatorioIdNovo = $state(0);
 
     const servidores = data.servidores ?? [];
     const delegacias = data.delegacias ?? [];
+
+    $effect(() => {
+        if (form && 'acao' in form && (form as any).acao === 'finalizado') {
+            relatorioFinalizado = true;
+            protocoloGerado = (form as any).protocolo ?? '';
+            relatorioIdNovo = (form as any).id ?? 0;
+        }
+    });
 
     function adicionarMembro() {
         equipe.push({
@@ -241,7 +252,10 @@
             carregando = true;
             return async ({ result, update }) => {
                 carregando = false;
-                await update({ reset: false });
+                // invalidateAll: false → load não re-executa (evita o erro 400
+                // "Apenas relatórios finalizados podem ser retificados" que
+                // ocorreria porque o original já foi marcado como 'retificado')
+                await update({ reset: false, invalidateAll: false });
             };
         }}>
 
@@ -566,16 +580,41 @@
 
             <!-- ── Barra de ações ── -->
             <div class="pt-6 border-t border-[#c5a059]/30">
-                <div class="flex justify-center">
-                    <button type="submit"
-                        disabled={carregando}
-                        class="px-8 py-3 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-sm font-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider">
-                        {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RETIFICAÇÃO'}
-                    </button>
+                <div class="flex flex-wrap justify-center gap-2">
+
+                    {#if !relatorioFinalizado}
+                        <button type="submit"
+                            disabled={carregando}
+                            class="px-6 py-2.5 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-xs font-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider">
+                            {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RETIFICAÇÃO'}
+                        </button>
+                    {/if}
+
+                    <a href={relatorioFinalizado ? `/plantao/imprimir/${relatorioIdNovo}` : '#'}
+                        target={relatorioFinalizado ? '_blank' : undefined}
+                        class="px-4 py-2.5 bg-emerald-700 text-white text-xs font-black rounded-lg transition
+                               {relatorioFinalizado ? 'hover:bg-emerald-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
+                        🖨 PLANTÃO
+                    </a>
+
+                    <a href={relatorioFinalizado ? `/plantao/extra/${relatorioIdNovo}` : '#'}
+                        target={relatorioFinalizado ? '_blank' : undefined}
+                        class="px-4 py-2.5 bg-cyan-700 text-white text-xs font-black rounded-lg transition
+                               {relatorioFinalizado ? 'hover:bg-cyan-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
+                        📋 EXTRA
+                    </a>
                 </div>
-                <p class="text-slate-600 text-[10px] text-center mt-2 uppercase tracking-wider">
-                    Ao finalizar, o relatório original será marcado como retificado e a impressão abrirá automaticamente.
-                </p>
+
+                {#if relatorioFinalizado}
+                    <p class="text-center mt-3 font-mono text-emerald-400 font-black text-sm tracking-widest">
+                        ✅ {protocoloGerado} — Retificação finalizada
+                        <a href="/plantao" class="ml-4 text-[10px] border border-slate-600 text-slate-400 px-3 py-1 rounded-lg hover:bg-slate-800 transition font-sans font-bold uppercase">+ Novo Relatório</a>
+                    </p>
+                {:else}
+                    <p class="text-slate-600 text-[10px] text-center mt-2 uppercase tracking-wider">
+                        🖨 PLANTÃO e 📋 EXTRA serão habilitados após a finalização
+                    </p>
+                {/if}
             </div>
         </form>
     </div>

@@ -163,9 +163,8 @@ export const actions: Actions = {
 
             await db.batch(batch);
 
-            throw redirect(303, `/plantao/imprimir/${novoId}`);
+            return { sucesso: true, acao: 'finalizado', protocolo, id: novoId };
         } catch (err) {
-            if (err instanceof Response) throw err; // re-throw redirect
             console.error('Erro ao salvar retificação:', err);
             return fail(500, { erro: 'Erro ao salvar os dados. Tente novamente.' });
         }
