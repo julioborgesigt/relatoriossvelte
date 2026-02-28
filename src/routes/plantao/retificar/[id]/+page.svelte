@@ -23,7 +23,8 @@
         nome: string;
         matricula: string;
         cargo: string;
-        classe: string;
+        lotacao: string;
+        telefone: string;
         escala: 'Normal' | 'Extraordinaria';
         data_entrada: string;
         hora_entrada: string;
@@ -56,7 +57,8 @@
                 nome: m.nome_servidor ?? '',
                 matricula: m.matricula ?? '',
                 cargo: m.cargo ?? '',
-                classe: m.classe ?? '',
+                lotacao: m.classe ?? '',   // coluna classe armazena lotação
+                telefone: '',
                 escala: (m.escala as 'Normal' | 'Extraordinaria') ?? 'Normal',
                 data_entrada: m.data_entrada ?? '',
                 hora_entrada: m.hora_entrada ?? '',
@@ -64,7 +66,7 @@
                 hora_saida: m.hora_saida ?? '',
                 mostrarHorario: false
             }))
-            : [{ id: 0, nome: '', matricula: '', cargo: '', classe: '', escala: 'Normal' as const, data_entrada: '', hora_entrada: '', data_saida: '', hora_saida: '', mostrarHorario: false }]
+            : [{ id: 0, nome: '', matricula: '', cargo: '', lotacao: '', telefone: '', escala: 'Normal' as const, data_entrada: '', hora_entrada: '', data_saida: '', hora_saida: '', mostrarHorario: false }]
     );
     let nextMembroId = $state(data.equipeOriginal.length);
 
@@ -94,6 +96,11 @@
     let carregando = $state(false);
     let isDirty = $state(false);
 
+    // Estado pós-finalização da retificação
+    let relatorioFinalizado = $state(false);
+    let protocoloGerado = $state('');
+    let relatorioIdNovo = $state(0);
+
     const servidores = data.servidores ?? [];
     const delegacias = data.delegacias ?? [];
 
@@ -101,7 +108,7 @@
 
     function adicionarMembro() {
         equipe.push({
-            id: nextMembroId++, nome: '', matricula: '', cargo: '', classe: '',
+            id: nextMembroId++, nome: '', matricula: '', cargo: '', lotacao: '', telefone: '',
             escala: 'Normal', data_entrada: data_entrada, hora_entrada: hora_entrada,
             data_saida: data_saida, hora_saida: hora_saida, mostrarHorario: false
         });
@@ -121,10 +128,10 @@
         if (encontrado) {
             const membro = equipe.find(m => m.id === membroId);
             if (membro) {
-                membro.nome = encontrado.nome;
+                membro.nome     = encontrado.nome;
                 membro.matricula = encontrado.matricula;
-                membro.cargo = encontrado.cargo || '';
-                membro.classe = encontrado.classe || '';
+                membro.cargo    = encontrado.cargo || '';
+                membro.lotacao  = (encontrado as any).lotacao || '';
             }
         }
         marcarDirty();
@@ -201,6 +208,13 @@
         if (form && 'sucesso' in form && form.sucesso) {
             isDirty = false;
         }
+        if (form && 'acao' in form && (form as any).acao === 'finalizado') {
+            relatorioFinalizado = true;
+            protocoloGerado = (form as any).protocolo ?? '';
+            relatorioIdNovo = (form as any).id ?? 0;
+            // Abre impressão em nova aba automaticamente ao finalizar
+            if (relatorioIdNovo) window.open(`/plantao/imprimir/${relatorioIdNovo}`, '_blank');
+        }
     });
 </script>
 
@@ -266,12 +280,7 @@
             carregando = true;
             return async ({ result, update }) => {
                 carregando = false;
-                if (result.type === 'redirect') {
-                    // Abre a página de impressão em nova aba (igual ao fluxo principal)
-                    window.open(result.location, '_blank');
-                } else {
-                    await update({ reset: false });
-                }
+                await update({ reset: false });
             };
         }} oninput={marcarDirty}>
 
@@ -334,50 +343,65 @@
 
                 <div class="space-y-3">
                     {#each equipe as membro, idx (membro.id)}
-                        <div class="bg-black/20 border border-[#c5a059]/20 rounded-xl p-4">
-                            <div class="flex items-start gap-2 flex-wrap">
-                                <div class="flex-1 min-w-48">
-                                    <input
-                                        name="equipe_{idx}_nome"
-                                        type="text"
-                                        list="lista-servidores"
-                                        bind:value={membro.nome}
-                                        onchange={() => buscarServidor(membro.nome, membro.id)}
-                                        placeholder="Nome / Matrícula do Policial"
-                                        class="w-full bg-black/30 border-l-4 border-[#c5a059] text-white placeholder-slate-600 p-3 rounded-lg outline-none uppercase text-sm"
-                                    />
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-mono {membro.escala === 'Extraordinaria' ? 'text-yellow-400 bg-yellow-900/40 border border-yellow-700' : 'text-slate-400 bg-slate-800'} px-2 py-1 rounded font-bold min-w-12 text-center">
-                                        {calcularHoras(membro)}
-                                    </span>
-                                    <select name="equipe_{idx}_escala" bind:value={membro.escala}
-                                        class="bg-slate-800 border border-slate-700 text-slate-300 text-xs p-2 rounded-lg outline-none">
-                                        <option value="Normal">Normal</option>
-                                        <option value="Extraordinaria">Extraordinária</option>
-                                    </select>
-                                    <button type="button"
-                                        onclick={() => membro.mostrarHorario = !membro.mostrarHorario}
-                                        class="text-xs border border-slate-700 text-slate-400 px-2 py-1 rounded hover:bg-slate-800 transition"
-                                        title="Horário individual">
-                                        🕐
-                                    </button>
-                                    {#if idx > 0}
-                                        <button type="button" onclick={() => removerMembro(membro.id)}
-                                            class="bg-red-900/50 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition text-xs font-bold">
-                                            ✕
-                                        </button>
-                                    {/if}
-                                </div>
+                        <div class="bg-black/20 border {membro.escala === 'Extraordinaria' && membro.mostrarHorario ? 'border-yellow-700/40' : 'border-[#c5a059]/20'} rounded-xl p-3">
+
+                            <!-- Linha 1: Nome + controles -->
+                            <div class="flex items-center gap-2 mb-2">
+                                <label class="text-[#c5a059] text-[9px] font-black uppercase tracking-wider whitespace-nowrap">Nome do Policial</label>
+                                <input
+                                    name="equipe_{idx}_nome"
+                                    type="text"
+                                    list="lista-servidores"
+                                    bind:value={membro.nome}
+                                    onchange={() => buscarServidor(membro.nome, membro.id)}
+                                    placeholder="Nome completo ou matrícula..."
+                                    class="flex-1 bg-black/30 border-l-4 border-[#c5a059] text-white placeholder-slate-600 px-3 py-2 rounded-lg outline-none uppercase text-sm"
+                                />
+                                <span class="text-xs font-mono {membro.escala === 'Extraordinaria' ? 'text-yellow-400 bg-yellow-900/40 border border-yellow-700' : 'text-slate-500 bg-slate-800'} px-2 py-1.5 rounded font-bold min-w-[3rem] text-center">
+                                    {calcularHoras(membro)}
+                                </span>
+                                <select name="equipe_{idx}_escala" bind:value={membro.escala}
+                                    class="bg-slate-800 border border-slate-700 text-slate-300 text-xs p-2 rounded-lg outline-none">
+                                    <option value="Normal">Normal</option>
+                                    <option value="Extraordinaria">Extraordinária</option>
+                                </select>
+                                <button type="button"
+                                    onclick={() => membro.mostrarHorario = !membro.mostrarHorario}
+                                    class="text-xs border border-slate-700 text-slate-400 px-2 py-1.5 rounded hover:bg-slate-800 transition"
+                                    title="Horário individual">🕐</button>
+                                {#if idx > 0}
+                                    <button type="button" onclick={() => removerMembro(membro.id)}
+                                        class="bg-red-900/50 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg transition text-xs font-bold">✕</button>
+                                {/if}
                             </div>
 
-                            <input type="hidden" name="equipe_{idx}_matricula" value={membro.matricula} />
-                            <input type="hidden" name="equipe_{idx}_cargo" value={membro.cargo} />
-                            <input type="hidden" name="equipe_{idx}_classe" value={membro.classe} />
-
-                            {#if membro.cargo}
-                                <p class="text-xs text-[#c5a059]/70 mt-1 ml-1">{membro.cargo} {membro.classe ? `— ${membro.classe}` : ''}</p>
-                            {/if}
+                            <!-- Linha 2: Cargo | Matrícula | Telefone | Lotação -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5">Cargo</label>
+                                    <input type="text" name="equipe_{idx}_cargo" bind:value={membro.cargo}
+                                        placeholder="—"
+                                        class="w-full bg-black/30 border border-slate-700 text-white text-xs px-2 py-1.5 rounded outline-none uppercase" />
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5">Matrícula</label>
+                                    <input type="text" name="equipe_{idx}_matricula" bind:value={membro.matricula}
+                                        placeholder="—"
+                                        class="w-full bg-black/30 border border-slate-700 text-white text-xs px-2 py-1.5 rounded outline-none font-mono" />
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5">Telefone</label>
+                                    <input type="text" bind:value={membro.telefone}
+                                        placeholder="—"
+                                        class="w-full bg-black/30 border border-slate-700 text-white text-xs px-2 py-1.5 rounded outline-none font-mono" />
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5">Lotação</label>
+                                    <input type="text" name="equipe_{idx}_classe" bind:value={membro.lotacao}
+                                        placeholder="—"
+                                        class="w-full bg-black/30 border border-slate-700 text-white text-xs px-2 py-1.5 rounded outline-none uppercase" />
+                                </div>
+                            </div>
 
                             <!-- Horário individual expandível -->
                             {#if membro.mostrarHorario}
@@ -579,18 +603,56 @@
                     class="w-full bg-black/20 border border-slate-700 text-white placeholder-slate-600 p-3 rounded-xl outline-none resize-y text-sm focus:ring-2 focus:ring-[#c5a059] uppercase"></textarea>
             </section>
 
-            <!-- Botões de ação -->
-            <div class="pt-6 border-t border-[#c5a059]/30 flex flex-wrap justify-end gap-3">
-                <button type="submit" name="acao" value="rascunho"
-                    disabled={carregando}
-                    class="px-5 py-2.5 border border-slate-500 text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-800 transition disabled:opacity-50">
-                    {carregando ? '...' : '💾 SALVAR RASCUNHO'}
-                </button>
-                <button type="submit" name="acao" value="finalizar"
-                    disabled={carregando}
-                    class="px-8 py-2.5 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-sm font-black rounded-xl hover:brightness-110 transition disabled:opacity-50">
-                    {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RETIFICAÇÃO'}
-                </button>
+            <!-- ── Barra de ações unificada ── -->
+            <div class="pt-6 border-t border-[#c5a059]/30">
+                <div class="flex flex-wrap justify-center gap-2">
+
+                    <!-- Salvar Rascunho -->
+                    <button type="submit" name="acao" value="rascunho"
+                        disabled={carregando || relatorioFinalizado}
+                        class="px-4 py-2 border border-slate-500 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                        💾 SALVAR RASCUNHO
+                    </button>
+
+                    <!-- Finalizar Retificação (antes de finalizar) -->
+                    {#if !relatorioFinalizado}
+                        <button type="submit" name="acao" value="finalizar"
+                            disabled={carregando}
+                            class="px-4 py-2 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-xs font-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RETIFICAÇÃO'}
+                        </button>
+                    {/if}
+
+                    <!-- Imprimir Plantão (habilitado após finalização) -->
+                    <a href={relatorioFinalizado ? `/plantao/imprimir/${relatorioIdNovo}` : '#'}
+                        target={relatorioFinalizado ? '_blank' : undefined}
+                        title={relatorioFinalizado ? 'Abrir relatório retificado para impressão' : 'Finalize a retificação primeiro'}
+                        class="px-4 py-2 bg-emerald-700 text-white text-xs font-black rounded-lg transition
+                               {relatorioFinalizado ? 'hover:bg-emerald-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
+                        🖨 PLANTÃO
+                    </a>
+
+                    <!-- Relatório Extra (habilitado após finalização) -->
+                    <a href={relatorioFinalizado ? `/plantao/extra/${relatorioIdNovo}` : '#'}
+                        target={relatorioFinalizado ? '_blank' : undefined}
+                        title={relatorioFinalizado ? 'Abrir relatório extra retificado' : 'Finalize a retificação primeiro'}
+                        class="px-4 py-2 bg-cyan-700 text-white text-xs font-black rounded-lg transition
+                               {relatorioFinalizado ? 'hover:bg-cyan-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
+                        📋 EXTRA
+                    </a>
+                </div>
+
+                <!-- Protocolo pós-finalização -->
+                {#if relatorioFinalizado}
+                    <p class="text-center mt-3 font-mono text-emerald-400 font-black text-sm tracking-widest">
+                        ✅ {protocoloGerado} — Retificação finalizada
+                        <a href="/plantao" class="ml-4 text-[10px] border border-slate-600 text-slate-400 px-3 py-1 rounded-lg hover:bg-slate-800 transition font-sans font-bold uppercase">+ Novo Relatório</a>
+                    </p>
+                {:else}
+                    <p class="text-slate-600 text-[10px] text-center mt-2 uppercase tracking-wider">
+                        🖨 PLANTÃO e 📋 EXTRA serão habilitados após a finalização
+                    </p>
+                {/if}
             </div>
         </form>
     </div>
