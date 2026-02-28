@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 
     const [delegaciasRes, servidoresRes] = await Promise.all([
         db.prepare(`SELECT nome FROM delegacias WHERE status = 'SIM' OR status = 'TEMPORARIO' ORDER BY nome`).all<{ nome: string }>(),
-        db.prepare(`SELECT nome, matricula, cargo, classe FROM servidores WHERE ativo = 1 ORDER BY nome`).all<{ nome: string; matricula: string; cargo: string; classe: string }>()
+        db.prepare(`SELECT nome, matricula, cargo, classe, lotacao FROM servidores WHERE ativo = 1 ORDER BY nome`).all<{ nome: string; matricula: string; cargo: string; classe: string; lotacao: string }>()
     ]);
 
     return {
