@@ -37,9 +37,6 @@
 
 <!-- Botões de ação (não aparecem na impressão) -->
 <div class="no-print fixed bottom-6 right-6 flex gap-3 z-50">
-    <a href="/dashboard" class="bg-slate-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-slate-600 transition">
-        ← Dashboard
-    </a>
     {#if p.status === 'finalizado' || p.status === 'retificado'}
         <a href="/plantao/extra/{p.id}" class="bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl hover:bg-blue-600 transition">
             📋 Extra

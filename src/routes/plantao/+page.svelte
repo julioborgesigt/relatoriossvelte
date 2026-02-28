@@ -62,6 +62,11 @@
     let mostrarModalRascunho = $state(false);
     let isDirty = $state(false);
 
+    // Estado pós-finalização
+    let relatorioFinalizado = $state(false);
+    let protocoloGerado = $state('');
+    let relatorioId = $state(0);
+
     // Servidores para autocomplete
     const servidores = data.servidores ?? [];
     const delegacias = data.delegacias ?? [];
@@ -170,10 +175,15 @@
         }
     }
 
-    // Efeito: restaura dados do rascunho se form retornou
+    // Efeito: detecta finalização e rascunho
     $effect(() => {
         if (form && 'sucesso' in form && form.sucesso) {
             isDirty = false;
+        }
+        if (form && 'acao' in form && (form as any).acao === 'finalizado') {
+            relatorioFinalizado = true;
+            protocoloGerado = (form as any).protocolo ?? '';
+            relatorioId = (form as any).id ?? 0;
         }
     });
 </script>
@@ -570,18 +580,68 @@
                     class="w-full bg-black/20 border border-slate-700 text-white placeholder-slate-600 p-3 rounded-xl outline-none resize-y text-sm focus:ring-2 focus:ring-[#c5a059] uppercase"></textarea>
             </section>
 
+            <!-- Banner de protocolo pós-finalização -->
+            {#if relatorioFinalizado}
+                <div class="mb-4 bg-emerald-900/40 border border-emerald-500/60 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <p class="text-emerald-400 text-xs font-bold uppercase tracking-widest">✅ Relatório Finalizado</p>
+                        <p class="text-white font-mono text-lg font-black tracking-widest">{protocoloGerado}</p>
+                    </div>
+                    <a href="/plantao" class="text-xs border border-slate-500 text-slate-300 px-4 py-2 rounded-lg hover:bg-slate-800 transition font-bold uppercase">
+                        + Novo Relatório
+                    </a>
+                </div>
+            {/if}
+
             <!-- Botões de ação -->
-            <div class="pt-6 border-t border-[#c5a059]/30 flex flex-wrap justify-end gap-3">
-                <button type="submit" name="acao" value="rascunho"
-                    disabled={carregando}
-                    class="px-5 py-2.5 border border-slate-500 text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-800 transition disabled:opacity-50">
-                    {carregando ? '...' : '💾 SALVAR RASCUNHO'}
-                </button>
-                <button type="submit" name="acao" value="finalizar"
-                    disabled={carregando}
-                    class="px-8 py-2.5 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-sm font-black rounded-xl hover:brightness-110 transition disabled:opacity-50">
-                    {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RELATÓRIO'}
-                </button>
+            <div class="pt-6 border-t border-[#c5a059]/30">
+
+                <!-- Salvar / Finalizar (ocultados após finalização) -->
+                {#if !relatorioFinalizado}
+                    <div class="flex flex-wrap justify-end gap-3 mb-4">
+                        <button type="submit" name="acao" value="rascunho"
+                            disabled={carregando}
+                            class="px-5 py-2.5 border border-slate-500 text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-800 transition disabled:opacity-50">
+                            {carregando ? '...' : '💾 SALVAR RASCUNHO'}
+                        </button>
+                        <button type="submit" name="acao" value="finalizar"
+                            disabled={carregando}
+                            class="px-8 py-2.5 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-sm font-black rounded-xl hover:brightness-110 transition disabled:opacity-50">
+                            {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RELATÓRIO'}
+                        </button>
+                    </div>
+                {/if}
+
+                <!-- Botões de impressão (habilitados somente após finalização) -->
+                <div class="flex flex-wrap gap-3 {relatorioFinalizado ? '' : 'opacity-40 pointer-events-none'}">
+                    <div class="flex-1 min-w-48">
+                        <a
+                            href={relatorioFinalizado ? `/plantao/imprimir/${relatorioId}` : '#'}
+                            target="_blank"
+                            class="flex items-center justify-center gap-2 w-full py-3 bg-[#c5a059] text-[#0a192f] font-black rounded-xl text-sm uppercase tracking-wide
+                                   {relatorioFinalizado ? 'hover:brightness-110 cursor-pointer' : 'cursor-not-allowed'} transition"
+                            title={relatorioFinalizado ? 'Abrir relatório de plantão para impressão' : 'Finalize o relatório primeiro'}
+                        >
+                            🖨️ Imprimir Plantão
+                        </a>
+                    </div>
+                    <div class="flex-1 min-w-48">
+                        <a
+                            href={relatorioFinalizado ? `/plantao/extra/${relatorioId}` : '#'}
+                            target="_blank"
+                            class="flex items-center justify-center gap-2 w-full py-3 bg-blue-700 text-white font-black rounded-xl text-sm uppercase tracking-wide
+                                   {relatorioFinalizado ? 'hover:bg-blue-600 cursor-pointer' : 'cursor-not-allowed'} transition"
+                            title={relatorioFinalizado ? 'Abrir relatório de serviço extraordinário' : 'Finalize o relatório primeiro'}
+                        >
+                            📋 Relatório Extra
+                        </a>
+                    </div>
+                </div>
+                {#if !relatorioFinalizado}
+                    <p class="text-slate-600 text-[10px] text-center mt-2 uppercase tracking-wider">
+                        Os botões de impressão serão habilitados após a finalização
+                    </p>
+                {/if}
             </div>
         </form>
     </div>
