@@ -112,6 +112,32 @@ export const actions: Actions = {
             j++;
         }
 
+        // ── Validações de horário (só quando saída informada) ────────────────
+        if (data_saida && hora_saida) {
+            const entradaPlantao = new Date(`${data_entrada}T${hora_entrada}`);
+            const saidaPlantao   = new Date(`${data_saida}T${hora_saida}`);
+            const diffH = (saidaPlantao.getTime() - entradaPlantao.getTime()) / 3_600_000;
+
+            if (diffH <= 0) {
+                return fail(400, { erro: 'A data/hora de saída deve ser posterior à de entrada.' });
+            }
+            if (diffH > 24) {
+                return fail(400, { erro: `O plantão não pode exceder 24 horas (atual: ${diffH.toFixed(1)}h).` });
+            }
+
+            for (const membro of equipe) {
+                if (membro.escala === 'Extraordinaria') {
+                    const entM = new Date(`${membro.data_entrada}T${membro.hora_entrada}`);
+                    const saiM = new Date(`${membro.data_saida}T${membro.hora_saida}`);
+                    if (!isNaN(entM.getTime()) && !isNaN(saiM.getTime())) {
+                        if (entM < entradaPlantao || saiM > saidaPlantao) {
+                            return fail(400, { erro: `Horário extraordinário de "${membro.nome}" está fora do período do plantão.` });
+                        }
+                    }
+                }
+            }
+        }
+
         const agora = new Date().toISOString();
         const status = acao === 'finalizar' ? 'finalizado' : 'rascunho';
 

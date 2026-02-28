@@ -71,6 +71,31 @@
     const servidores = data.servidores ?? [];
     const delegacias = data.delegacias ?? [];
 
+    // ── Validações de horário ─────────────────────────────────────────────────
+    let duracaoHoras = $derived.by(() => {
+        if (!data_entrada || !hora_entrada || !data_saida || !hora_saida) return null;
+        const de = new Date(`${data_entrada}T${hora_entrada}`);
+        const ate = new Date(`${data_saida}T${hora_saida}`);
+        if (isNaN(de.getTime()) || isNaN(ate.getTime())) return null;
+        return (ate.getTime() - de.getTime()) / (1000 * 60 * 60);
+    });
+    let duracaoInvalida = $derived(duracaoHoras !== null && (duracaoHoras <= 0 || duracaoHoras > 24));
+
+    function membroExtraForaDoPlantao(membro: Membro): boolean {
+        if (membro.escala !== 'Extraordinaria') return false;
+        if (!data_entrada || !hora_entrada || !data_saida || !hora_saida) return false;
+        const entradaPlantao = new Date(`${data_entrada}T${hora_entrada}`);
+        const saidaPlantao   = new Date(`${data_saida}T${hora_saida}`);
+        const entradaMembro  = membro.data_entrada && membro.hora_entrada
+            ? new Date(`${membro.data_entrada}T${membro.hora_entrada}`) : entradaPlantao;
+        const saidaMembro    = membro.data_saida && membro.hora_saida
+            ? new Date(`${membro.data_saida}T${membro.hora_saida}`) : saidaPlantao;
+        if (isNaN(entradaMembro.getTime()) || isNaN(saidaMembro.getTime())) return false;
+        return entradaMembro < entradaPlantao || saidaMembro > saidaPlantao;
+    }
+
+    let temErrosHorario = $derived(duracaoInvalida || equipe.some(m => membroExtraForaDoPlantao(m)));
+
     function marcarDirty() { isDirty = true; }
 
     function adicionarMembro() {
@@ -315,14 +340,23 @@
                     <div>
                         <label for="data_said" class="block text-[#c5a059] text-[10px] font-bold uppercase mb-1">Saída (Data)</label>
                         <input id="data_said" name="data_saida" type="date" bind:value={data_saida}
-                            class="w-full bg-white/90 text-slate-900 p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#c5a059] text-sm" />
+                            class="w-full {duracaoInvalida ? 'bg-red-100 ring-2 ring-red-400' : 'bg-white/90'} text-slate-900 p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#c5a059] text-sm" />
                     </div>
                     <div>
                         <label for="hora_said" class="block text-[#c5a059] text-[10px] font-bold uppercase mb-1">Saída (Hora)</label>
                         <input id="hora_said" name="hora_saida" type="time" bind:value={hora_saida}
-                            class="w-full bg-white/90 text-slate-900 p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#c5a059] text-sm" />
+                            class="w-full {duracaoInvalida ? 'bg-red-100 ring-2 ring-red-400' : 'bg-white/90'} text-slate-900 p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#c5a059] text-sm" />
                     </div>
                 </div>
+                {#if duracaoInvalida}
+                    <p class="text-red-400 text-xs font-bold mt-2">
+                        ⚠ {duracaoHoras !== null && duracaoHoras <= 0
+                            ? 'A saída deve ser posterior à entrada.'
+                            : `Plantão não pode exceder 24h (atual: ${duracaoHoras?.toFixed(1)}h).`}
+                    </p>
+                {:else if duracaoHoras !== null}
+                    <p class="text-slate-500 text-[10px] mt-1">Duração: {Math.floor(duracaoHoras)}h{Math.round((duracaoHoras % 1) * 60) > 0 ? Math.round((duracaoHoras % 1) * 60) + 'm' : ''}</p>
+                {/if}
             </section>
 
             <hr class="border-[#c5a059]/20 my-6" />
@@ -388,6 +422,12 @@
 
                             {#if membro.cargo}
                                 <p class="text-xs text-[#c5a059]/70 mt-1 ml-1">{membro.cargo} {membro.classe ? `— ${membro.classe}` : ''}</p>
+                            {/if}
+
+                            {#if membroExtraForaDoPlantao(membro)}
+                                <p class="text-red-400 text-xs font-bold mt-1 ml-1">
+                                    ⚠ Horário extraordinário fora do período do plantão.
+                                </p>
                             {/if}
 
                             <!-- Horário individual expandível -->
@@ -598,8 +638,9 @@
                             {carregando ? '...' : '💾 SALVAR RASCUNHO'}
                         </button>
                         <button type="submit" name="acao" value="finalizar"
-                            disabled={carregando}
-                            class="px-8 py-2.5 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-sm font-black rounded-xl hover:brightness-110 transition disabled:opacity-50">
+                            disabled={carregando || temErrosHorario}
+                            title={temErrosHorario ? 'Corrija os erros de horário antes de finalizar' : undefined}
+                            class="px-8 py-2.5 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-sm font-black rounded-xl hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed">
                             {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RELATÓRIO'}
                         </button>
                     </div>
