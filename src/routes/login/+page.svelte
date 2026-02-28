@@ -117,11 +117,14 @@
                             name="token"
                             type="text"
                             inputmode="numeric"
-                            pattern="[0-9]{6}"
                             maxlength="6"
                             placeholder="000000"
                             autocomplete="one-time-code"
                             required
+                            oninput={(e) => {
+                                const el = e.currentTarget as HTMLInputElement;
+                                el.value = el.value.replace(/\D/g, '').slice(0, 6);
+                            }}
                             class="w-full bg-white/10 border border-white/20 text-white placeholder-slate-500 p-3 rounded-lg focus:ring-2 focus:ring-[#c5a059] focus:border-transparent outline-none text-center text-3xl font-mono tracking-[0.5em] transition-all"
                         />
                     </div>
