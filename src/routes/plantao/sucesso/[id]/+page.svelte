@@ -15,16 +15,23 @@
         </p>
 
         <div class="space-y-3">
-            <a 
-                href="/plantao/imprimir/{id}" 
+            <a
+                href="/plantao/imprimir/{id}"
                 target="_blank"
                 class="block w-full py-3 bg-[#c5a059] text-[#0a192f] font-black rounded-xl hover:brightness-110 transition-all uppercase text-sm tracking-widest"
             >
-                🖨️ Abrir para Impressão
+                🖨️ Imprimir Relatório de Plantão
             </a>
-            
-            <a 
-                href="/plantao" 
+
+            <a
+                href="/plantao/extra/{id}"
+                class="block w-full py-3 bg-blue-700 text-white font-black rounded-xl hover:bg-blue-600 transition-all uppercase text-sm tracking-widest"
+            >
+                📋 Relatório de Serviço Extraordinário
+            </a>
+
+            <a
+                href="/plantao"
                 class="block w-full py-3 border border-slate-500 text-slate-300 font-bold rounded-xl hover:bg-white/5 transition-all uppercase text-xs"
             >
                 Novo Relatório
