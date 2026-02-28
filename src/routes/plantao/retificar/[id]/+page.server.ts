@@ -1,4 +1,4 @@
-import { fail, redirect, isRedirect, error } from '@sveltejs/kit';
+import { fail, error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, platform, locals }) => {
@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
             resumo: string; vitimas_json: string; suspeitos_json: string;
         }>(),
         db.prepare(`SELECT nome FROM delegacias WHERE status = 'SIM' OR status = 'TEMPORARIO' ORDER BY nome`).all<{ nome: string }>(),
-        db.prepare(`SELECT nome, matricula, cargo, classe FROM servidores WHERE ativo = 1 ORDER BY nome`).all<{ nome: string; matricula: string; cargo: string; classe: string }>()
+        db.prepare(`SELECT nome, matricula, cargo, classe, lotacao FROM servidores WHERE ativo = 1 ORDER BY nome`).all<{ nome: string; matricula: string; cargo: string; classe: string; lotacao: string }>()
     ]);
 
     if (!plantao) throw error(404, 'Relatório não encontrado.');
@@ -173,12 +173,11 @@ export const actions: Actions = {
             await db.batch(batch);
 
             if (acao === 'finalizar') {
-                throw redirect(303, `/plantao/imprimir/${novoId}`);
+                return { sucesso: true, acao: 'finalizado', protocolo, id: novoId };
             }
 
             return { sucesso: true, mensagem: `Rascunho de retificação salvo! Protocolo: ${protocolo}`, protocolo };
         } catch (err) {
-            if (isRedirect(err)) throw err;
             console.error('Erro ao salvar retificação:', err);
             return fail(500, { erro: 'Erro ao salvar os dados. Tente novamente.' });
         }
