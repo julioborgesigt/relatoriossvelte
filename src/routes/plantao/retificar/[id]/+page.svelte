@@ -108,14 +108,6 @@
     const servidores = data.servidores ?? [];
     const delegacias = data.delegacias ?? [];
 
-    $effect(() => {
-        if (form && 'acao' in form && (form as any).acao === 'finalizado') {
-            relatorioFinalizado = true;
-            protocoloGerado = (form as any).protocolo ?? '';
-            relatorioIdNovo = (form as any).id ?? 0;
-        }
-    });
-
     function abrirModalExtra() {
         justificativaExtra = `O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial, conforme relatório de plantão ${protocoloGerado}.`;
         membrosExtraIncluidos = membrosExtraordinarios.map(m => m.nome);
@@ -261,8 +253,16 @@
             Diretor / Delegado Signatário <span class="text-red-400">*</span>
         </label>
         <input bind:value={nomeDiretorExtra} type="text"
+            list="sugestoes-diretor-extra"
             placeholder="Nome completo do diretor ou delegado"
             class="w-full bg-[#0a192f] border border-[#c5a059]/30 rounded-lg p-3 text-white text-sm mb-1 focus:outline-none focus:border-[#c5a059] placeholder-slate-600" />
+        <datalist id="sugestoes-diretor-extra">
+            {#each equipe as m}
+                {#if m.nome.trim()}
+                    <option value={m.nome}>{m.cargo ? `${m.cargo}` : ''}</option>
+                {/if}
+            {/each}
+        </datalist>
         {#if !nomeDiretorExtra.trim()}
             <p class="text-red-400 text-[11px] mb-4">Campo obrigatório para gerar o relatório.</p>
         {:else}
@@ -356,6 +356,13 @@
                 // "Apenas relatórios finalizados podem ser retificados" que
                 // ocorreria porque o original já foi marcado como 'retificado')
                 await update({ reset: false, invalidateAll: false });
+                // Lê o resultado diretamente do callback (não do prop `form`)
+                // para evitar que a prop persista na navegação para a Nova Retificação
+                if (result.type === 'success' && (result.data as any)?.acao === 'finalizado') {
+                    relatorioFinalizado = true;
+                    protocoloGerado = (result.data as any).protocolo ?? '';
+                    relatorioIdNovo = (result.data as any).id ?? 0;
+                }
             };
         }}>
 
