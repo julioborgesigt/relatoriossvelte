@@ -64,6 +64,7 @@
     let mostrarModalRascunho = $state(false);
     let mostrarModalRetificar = $state(false);
     let codigoRetificar = $state('');
+    let erroRetificar = $state('');
     let isDirty = $state(false);
 
     // Estado pós-finalização
@@ -234,29 +235,44 @@
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
         <div class="bg-[#0d2137] border border-amber-500/40 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <h2 class="text-amber-400 font-black uppercase text-sm mb-1">✏️ Retificar Relatório</h2>
-            <p class="text-slate-400 text-xs mb-4">
-                Informe o protocolo do relatório finalizado que deseja retificar.<br/>
-                <span class="font-mono text-slate-500">Exemplo: FT-000042</span>
+            <p class="text-slate-400 text-xs mb-3">
+                Informe o protocolo <strong class="text-white">FT-</strong> do relatório <strong class="text-white">finalizado</strong> que deseja retificar.
+            </p>
+            <p class="text-slate-500 text-[10px] mb-4 font-mono bg-black/30 rounded px-2 py-1">
+                ⚠ Rascunhos (R-) não podem ser retificados. Finalize o relatório primeiro.
             </p>
             <form onsubmit={(e) => {
                 e.preventDefault();
+                erroRetificar = '';
                 const val = codigoRetificar.trim().toUpperCase();
-                const matchFT = val.match(/^FT-?(\d+)$/);
-                const matchNum = val.match(/^(\d+)$/);
-                const id = matchFT ? parseInt(matchFT[1]) : matchNum ? parseInt(matchNum[1]) : NaN;
-                if (!isNaN(id) && id > 0) {
-                    mostrarModalRetificar = false;
-                    window.location.href = `/plantao/retificar/${id}`;
+                const matchFT = val.match(/^FT-?0*(\d+)$/);
+                if (!matchFT) {
+                    erroRetificar = 'Digite um protocolo FT- válido. Ex: FT-000042';
+                    return;
                 }
+                const id = parseInt(matchFT[1]);
+                if (isNaN(id) || id <= 0) {
+                    erroRetificar = 'Protocolo inválido.';
+                    return;
+                }
+                mostrarModalRetificar = false;
+                codigoRetificar = '';
+                window.location.href = `/plantao/retificar/${id}`;
             }}>
                 <input type="text" bind:value={codigoRetificar} placeholder="FT-000001" required
-                    class="w-full bg-white/10 border border-white/20 text-white p-3 rounded-lg font-mono text-center text-lg mb-4 outline-none focus:ring-2 focus:ring-amber-500 uppercase" />
+                    oninput={() => erroRetificar = ''}
+                    class="w-full bg-white/10 border {erroRetificar ? 'border-red-500' : 'border-white/20'} text-white p-3 rounded-lg font-mono text-center text-lg mb-2 outline-none focus:ring-2 focus:ring-amber-500 uppercase" />
+                {#if erroRetificar}
+                    <p class="text-red-400 text-xs text-center mb-3">{erroRetificar}</p>
+                {:else}
+                    <div class="mb-3"></div>
+                {/if}
                 <div class="flex gap-2">
                     <button type="submit"
                         class="flex-1 bg-amber-500 text-black font-bold py-2 rounded-lg text-sm uppercase hover:brightness-110 transition">
                         ABRIR
                     </button>
-                    <button type="button" onclick={() => { mostrarModalRetificar = false; codigoRetificar = ''; }}
+                    <button type="button" onclick={() => { mostrarModalRetificar = false; codigoRetificar = ''; erroRetificar = ''; }}
                         class="flex-1 border border-slate-600 text-slate-400 py-2 rounded-lg text-sm uppercase hover:bg-slate-800 transition">
                         CANCELAR
                     </button>
