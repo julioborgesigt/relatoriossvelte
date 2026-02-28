@@ -262,7 +262,7 @@
                 if (result.type === 'redirect') {
                     import('$app/navigation').then(m => m.goto(result.location));
                 } else {
-                    await update();
+                    await update({ reset: false });
                 }
             };
         }} oninput={marcarDirty}>

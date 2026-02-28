@@ -1,4 +1,4 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { fail, redirect, isRedirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ platform, locals }) => {
@@ -122,7 +122,9 @@ export const actions: Actions = {
                 .run();
 
             const plantaoId = meta.last_row_id;
-            const protocolo = gerarProtocolo(plantaoId);
+            const protocolo = acao === 'finalizar'
+                ? gerarProtocolo(plantaoId)
+                : gerarCodigoRascunho(plantaoId);
 
             // Atualiza o protocolo
             await db.prepare(`UPDATE plantoes SET protocolo = ? WHERE id = ?`)
@@ -153,7 +155,7 @@ export const actions: Actions = {
 
             return { sucesso: true, mensagem: `Rascunho salvo! Protocolo: ${protocolo}`, protocolo };
         } catch (err) {
-            if (err instanceof Response) throw err;
+            if (isRedirect(err)) throw err;
             console.error('Erro ao salvar plantão:', err);
             return fail(500, { erro: 'Erro ao salvar os dados. Tente novamente.' });
         }
