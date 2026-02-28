@@ -424,7 +424,7 @@
 
                 <div class="space-y-3">
                     {#each equipe as membro, idx (membro.id)}
-                        <div class="bg-black/20 border {membroExtraForaDoPlantao(membro) ? 'border-red-500/60' : 'border-[#c5a059]/20'} rounded-xl p-3">
+                        <div class="bg-black/20 border {membroExtraForaDoPlantao(membro) ? 'border-red-500/60' : membro.escala === 'Extraordinaria' ? 'border-yellow-700/40' : 'border-[#c5a059]/20'} rounded-xl p-3">
 
                             <!-- Linha 1: Nome + controles -->
                             <div class="flex items-center gap-2 mb-2">
@@ -446,10 +446,12 @@
                                     <option value="Normal">Normal</option>
                                     <option value="Extraordinaria">Extraordinária</option>
                                 </select>
+                                {#if membro.escala !== 'Extraordinaria'}
                                 <button type="button"
                                     onclick={() => membro.mostrarHorario = !membro.mostrarHorario}
                                     class="text-xs border border-slate-700 text-slate-400 px-2 py-1.5 rounded hover:bg-slate-800 transition"
                                     title="Horário individual">🕐</button>
+                                {/if}
                                 {#if idx > 0}
                                     <button type="button" onclick={() => removerMembro(membro.id)}
                                         class="bg-red-900/50 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg transition text-xs font-bold">✕</button>
@@ -491,27 +493,44 @@
                             {/if}
 
                             <!-- Horário individual expandível -->
-                            {#if membro.mostrarHorario}
-                                <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 bg-black/20 p-2.5 rounded-lg border border-slate-700">
-                                    <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Entrada — Data</label>
-                                        <input type="date" name="equipe_{idx}_data_entrada" bind:value={membro.data_entrada}
-                                            class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
-                                    </div>
-                                    <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Entrada — Hora</label>
-                                        <input type="time" name="equipe_{idx}_hora_entrada" bind:value={membro.hora_entrada}
-                                            class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
-                                    </div>
-                                    <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Saída — Data</label>
-                                        <input type="date" name="equipe_{idx}_data_saida" bind:value={membro.data_saida}
-                                            class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
-                                    </div>
-                                    <div>
-                                        <label class="text-slate-400 text-[10px] uppercase">Saída — Hora</label>
-                                        <input type="time" name="equipe_{idx}_hora_saida" bind:value={membro.hora_saida}
-                                            class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                            {#if membro.escala === 'Extraordinaria' || membro.mostrarHorario}
+                                <div class="mt-2 bg-black/20 p-2.5 rounded-lg border border-slate-700">
+                                    {#if membro.escala === 'Extraordinaria'}
+                                        <label class="flex items-center gap-2 cursor-pointer mb-2">
+                                            <input type="checkbox" class="accent-yellow-400 w-3.5 h-3.5"
+                                                onchange={(e) => {
+                                                    if ((e.target as HTMLInputElement).checked) {
+                                                        membro.data_entrada = data_entrada;
+                                                        membro.hora_entrada = hora_entrada;
+                                                        membro.data_saida = data_saida;
+                                                        membro.hora_saida = hora_saida;
+                                                        marcarDirty();
+                                                    }
+                                                }} />
+                                            <span class="text-yellow-400 text-[10px] font-bold uppercase tracking-wide">Mesmo horário do plantão ordinário</span>
+                                        </label>
+                                    {/if}
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <div>
+                                            <label class="text-slate-400 text-[10px] uppercase">Entrada — Data</label>
+                                            <input type="date" name="equipe_{idx}_data_entrada" bind:value={membro.data_entrada}
+                                                class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                                        </div>
+                                        <div>
+                                            <label class="text-slate-400 text-[10px] uppercase">Entrada — Hora</label>
+                                            <input type="time" name="equipe_{idx}_hora_entrada" bind:value={membro.hora_entrada}
+                                                class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                                        </div>
+                                        <div>
+                                            <label class="text-slate-400 text-[10px] uppercase">Saída — Data</label>
+                                            <input type="date" name="equipe_{idx}_data_saida" bind:value={membro.data_saida}
+                                                class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                                        </div>
+                                        <div>
+                                            <label class="text-slate-400 text-[10px] uppercase">Saída — Hora</label>
+                                            <input type="time" name="equipe_{idx}_hora_saida" bind:value={membro.hora_saida}
+                                                class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5" />
+                                        </div>
                                     </div>
                                 </div>
                             {/if}
