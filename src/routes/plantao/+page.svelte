@@ -24,6 +24,8 @@
         matricula: string;
         cargo: string;
         classe: string;
+        telefone: string;
+        lotacao: string;
         escala: 'Normal' | 'Extraordinaria';
         data_entrada: string;
         hora_entrada: string;
@@ -46,7 +48,7 @@
 
     // Equipe
     let equipe = $state<Membro[]>([{
-        id: 0, nome: '', matricula: '', cargo: '', classe: '',
+        id: 0, nome: '', matricula: '', cargo: '', classe: '', telefone: '', lotacao: '',
         escala: 'Normal', data_entrada: '', hora_entrada: '',
         data_saida: '', hora_saida: '', mostrarHorario: false
     }]);
@@ -100,7 +102,7 @@
 
     function adicionarMembro() {
         equipe.push({
-            id: nextMembroId++, nome: '', matricula: '', cargo: '', classe: '',
+            id: nextMembroId++, nome: '', matricula: '', cargo: '', classe: '', telefone: '', lotacao: '',
             escala: 'Normal', data_entrada: data_entrada, hora_entrada: hora_entrada,
             data_saida: data_saida, hora_saida: hora_saida, mostrarHorario: false
         });
@@ -121,10 +123,11 @@
         if (encontrado) {
             const membro = equipe.find(m => m.id === membroId);
             if (membro) {
-                membro.nome = encontrado.nome;
+                membro.nome     = encontrado.nome;
                 membro.matricula = encontrado.matricula;
-                membro.cargo = encontrado.cargo || '';
-                membro.classe = encontrado.classe || '';
+                membro.cargo    = encontrado.cargo || '';
+                membro.classe   = encontrado.classe || '';
+                membro.lotacao  = (encontrado as any).lotacao || '';
             }
         }
         marcarDirty();
@@ -275,10 +278,6 @@
                     <span class="block text-xs text-slate-500 font-mono">{data.usuario?.matricula ?? ''}</span>
                 </div>
                 <div class="flex flex-col gap-1">
-                    <button type="button" onclick={() => mostrarModalRascunho = true}
-                        class="text-xs border border-slate-600 text-slate-400 px-3 py-1 rounded hover:bg-slate-800 transition">
-                        ↩ Retomar
-                    </button>
                     <a href="/logout" class="text-xs text-slate-500 hover:text-red-400 text-center transition">Sair</a>
                 </div>
             </div>
@@ -370,62 +369,68 @@
 
                 <div class="space-y-3">
                     {#each equipe as membro, idx (membro.id)}
-                        <div class="bg-black/20 border border-[#c5a059]/20 rounded-xl p-4">
-                            <div class="flex items-start gap-2 flex-wrap">
-                                <!-- Nome com autocomplete -->
-                                <div class="flex-1 min-w-48">
-                                    <input
-                                        name="equipe_{idx}_nome"
-                                        type="text"
-                                        list="lista-servidores"
-                                        bind:value={membro.nome}
-                                        onchange={() => buscarServidor(membro.nome, membro.id)}
-                                        placeholder="Nome / Matrícula do Policial"
-                                        class="w-full bg-black/30 border-l-4 border-[#c5a059] text-white placeholder-slate-600 p-3 rounded-lg outline-none uppercase text-sm"
-                                    />
+                        <div class="bg-black/20 border {membroExtraForaDoPlantao(membro) ? 'border-red-500/60' : 'border-[#c5a059]/20'} rounded-xl p-3">
+
+                            <!-- Linha 1: Nome + controles -->
+                            <div class="flex items-center gap-2 mb-2">
+                                <label class="text-[#c5a059] text-[9px] font-black uppercase tracking-wider whitespace-nowrap">Nome do Policial</label>
+                                <input
+                                    name="equipe_{idx}_nome"
+                                    type="text"
+                                    list="lista-servidores"
+                                    bind:value={membro.nome}
+                                    onchange={() => buscarServidor(membro.nome, membro.id)}
+                                    placeholder="Nome completo ou matrícula..."
+                                    class="flex-1 bg-black/30 border-l-4 border-[#c5a059] text-white placeholder-slate-600 px-3 py-2 rounded-lg outline-none uppercase text-sm"
+                                />
+                                <span class="text-xs font-mono {membro.escala === 'Extraordinaria' ? 'text-yellow-400 bg-yellow-900/40 border border-yellow-700' : 'text-slate-500 bg-slate-800'} px-2 py-1.5 rounded font-bold min-w-[3rem] text-center">
+                                    {calcularHoras(membro)}
+                                </span>
+                                <select name="equipe_{idx}_escala" bind:value={membro.escala}
+                                    class="bg-slate-800 border border-slate-700 text-slate-300 text-xs p-2 rounded-lg outline-none">
+                                    <option value="Normal">Normal</option>
+                                    <option value="Extraordinaria">Extraordinária</option>
+                                </select>
+                                <button type="button"
+                                    onclick={() => membro.mostrarHorario = !membro.mostrarHorario}
+                                    class="text-xs border border-slate-700 text-slate-400 px-2 py-1.5 rounded hover:bg-slate-800 transition"
+                                    title="Horário individual">🕐</button>
+                                {#if idx > 0}
+                                    <button type="button" onclick={() => removerMembro(membro.id)}
+                                        class="bg-red-900/50 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg transition text-xs font-bold">✕</button>
+                                {/if}
+                            </div>
+
+                            <!-- Linha 2: Cargo | Matrícula | Telefone | Lotação -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5">Cargo</label>
+                                    <input type="text" name="equipe_{idx}_cargo" bind:value={membro.cargo}
+                                        placeholder="—"
+                                        class="w-full bg-black/30 border border-slate-700 text-white text-xs px-2 py-1.5 rounded outline-none uppercase" />
                                 </div>
-
-                                <!-- Badge de horas -->
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-mono {membro.escala === 'Extraordinaria' ? 'text-yellow-400 bg-yellow-900/40 border border-yellow-700' : 'text-slate-400 bg-slate-800'} px-2 py-1 rounded font-bold min-w-12 text-center">
-                                        {calcularHoras(membro)}
-                                    </span>
-
-                                    <!-- Escala -->
-                                    <select name="equipe_{idx}_escala" bind:value={membro.escala}
-                                        class="bg-slate-800 border border-slate-700 text-slate-300 text-xs p-2 rounded-lg outline-none">
-                                        <option value="Normal">Normal</option>
-                                        <option value="Extraordinaria">Extraordinária</option>
-                                    </select>
-
-                                    <!-- Horário individual -->
-                                    <button type="button"
-                                        onclick={() => membro.mostrarHorario = !membro.mostrarHorario}
-                                        class="text-xs border border-slate-700 text-slate-400 px-2 py-1 rounded hover:bg-slate-800 transition"
-                                        title="Horário individual">
-                                        🕐
-                                    </button>
-
-                                    {#if idx > 0}
-                                        <button type="button" onclick={() => removerMembro(membro.id)}
-                                            class="bg-red-900/50 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition text-xs font-bold">
-                                            ✕
-                                        </button>
-                                    {/if}
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5">Matrícula</label>
+                                    <input type="text" name="equipe_{idx}_matricula" bind:value={membro.matricula}
+                                        placeholder="—"
+                                        class="w-full bg-black/30 border border-slate-700 text-white text-xs px-2 py-1.5 rounded outline-none font-mono" />
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5">Telefone</label>
+                                    <input type="text" bind:value={membro.telefone}
+                                        placeholder="—"
+                                        class="w-full bg-black/30 border border-slate-700 text-white text-xs px-2 py-1.5 rounded outline-none font-mono" />
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5">Lotação</label>
+                                    <input type="text" name="equipe_{idx}_classe" bind:value={membro.lotacao}
+                                        placeholder="—"
+                                        class="w-full bg-black/30 border border-slate-700 text-white text-xs px-2 py-1.5 rounded outline-none uppercase" />
                                 </div>
                             </div>
 
-                            <!-- Campos ocultos de dados do servidor -->
-                            <input type="hidden" name="equipe_{idx}_matricula" value={membro.matricula} />
-                            <input type="hidden" name="equipe_{idx}_cargo" value={membro.cargo} />
-                            <input type="hidden" name="equipe_{idx}_classe" value={membro.classe} />
-
-                            {#if membro.cargo}
-                                <p class="text-xs text-[#c5a059]/70 mt-1 ml-1">{membro.cargo} {membro.classe ? `— ${membro.classe}` : ''}</p>
-                            {/if}
-
                             {#if membroExtraForaDoPlantao(membro)}
-                                <p class="text-red-400 text-xs font-bold mt-1 ml-1">
+                                <p class="text-red-400 text-xs font-bold mt-2">
                                     ⚠ Horário extraordinário fora do período do plantão.
                                 </p>
                             {/if}
@@ -613,67 +618,72 @@
                     class="w-full bg-black/20 border border-slate-700 text-white placeholder-slate-600 p-3 rounded-xl outline-none resize-y text-sm focus:ring-2 focus:ring-[#c5a059] uppercase"></textarea>
             </section>
 
-            <!-- Banner de protocolo pós-finalização -->
-            {#if relatorioFinalizado}
-                <div class="mb-4 bg-emerald-900/40 border border-emerald-500/60 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
-                    <div>
-                        <p class="text-emerald-400 text-xs font-bold uppercase tracking-widest">✅ Relatório Finalizado</p>
-                        <p class="text-white font-mono text-lg font-black tracking-widest">{protocoloGerado}</p>
-                    </div>
-                    <a href="/plantao" class="text-xs border border-slate-500 text-slate-300 px-4 py-2 rounded-lg hover:bg-slate-800 transition font-bold uppercase">
-                        + Novo Relatório
-                    </a>
-                </div>
-            {/if}
-
-            <!-- Botões de ação -->
+            <!-- ── Barra de ações unificada ───────────────────────────────────── -->
             <div class="pt-6 border-t border-[#c5a059]/30">
+                <div class="flex flex-wrap justify-center gap-2">
 
-                <!-- Salvar / Finalizar (ocultados após finalização) -->
-                {#if !relatorioFinalizado}
-                    <div class="flex flex-wrap justify-end gap-3 mb-4">
-                        <button type="submit" name="acao" value="rascunho"
-                            disabled={carregando}
-                            class="px-5 py-2.5 border border-slate-500 text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-800 transition disabled:opacity-50">
-                            {carregando ? '...' : '💾 SALVAR RASCUNHO'}
-                        </button>
+                    <!-- Salvar Rascunho -->
+                    <button type="submit" name="acao" value="rascunho"
+                        disabled={carregando || relatorioFinalizado}
+                        class="px-4 py-2 border border-slate-500 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                        💾 SALVAR RASCUNHO
+                    </button>
+
+                    <!-- Retomar Rascunho -->
+                    <button type="button" onclick={() => mostrarModalRascunho = true}
+                        disabled={relatorioFinalizado}
+                        class="px-4 py-2 border border-slate-500 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                        ↩ RETOMAR RASCUNHO
+                    </button>
+
+                    <!-- Retificar (só após finalização) -->
+                    {#if relatorioFinalizado}
+                        <a href="/plantao/retificar/{relatorioId}"
+                            class="px-4 py-2 bg-amber-500 text-black text-xs font-black rounded-lg hover:brightness-110 transition">
+                            ✏️ RETIFICAR RELATÓRIO
+                        </a>
+                    {/if}
+
+                    <!-- Finalizar (antes da finalização) -->
+                    {#if !relatorioFinalizado}
                         <button type="submit" name="acao" value="finalizar"
                             disabled={carregando || temErrosHorario}
                             title={temErrosHorario ? 'Corrija os erros de horário antes de finalizar' : undefined}
-                            class="px-8 py-2.5 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-sm font-black rounded-xl hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="px-4 py-2 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-xs font-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed">
                             {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RELATÓRIO'}
                         </button>
-                    </div>
-                {/if}
+                    {/if}
 
-                <!-- Botões de impressão (habilitados somente após finalização) -->
-                <div class="flex flex-wrap gap-3 {relatorioFinalizado ? '' : 'opacity-40 pointer-events-none'}">
-                    <div class="flex-1 min-w-48">
-                        <a
-                            href={relatorioFinalizado ? `/plantao/imprimir/${relatorioId}` : '#'}
-                            target="_blank"
-                            class="flex items-center justify-center gap-2 w-full py-3 bg-[#c5a059] text-[#0a192f] font-black rounded-xl text-sm uppercase tracking-wide
-                                   {relatorioFinalizado ? 'hover:brightness-110 cursor-pointer' : 'cursor-not-allowed'} transition"
-                            title={relatorioFinalizado ? 'Abrir relatório de plantão para impressão' : 'Finalize o relatório primeiro'}
-                        >
-                            🖨️ Imprimir Plantão
-                        </a>
-                    </div>
-                    <div class="flex-1 min-w-48">
-                        <a
-                            href={relatorioFinalizado ? `/plantao/extra/${relatorioId}` : '#'}
-                            target="_blank"
-                            class="flex items-center justify-center gap-2 w-full py-3 bg-blue-700 text-white font-black rounded-xl text-sm uppercase tracking-wide
-                                   {relatorioFinalizado ? 'hover:bg-blue-600 cursor-pointer' : 'cursor-not-allowed'} transition"
-                            title={relatorioFinalizado ? 'Abrir relatório de serviço extraordinário' : 'Finalize o relatório primeiro'}
-                        >
-                            📋 Relatório Extra
-                        </a>
-                    </div>
+                    <!-- Imprimir Plantão -->
+                    <a href={relatorioFinalizado ? `/plantao/imprimir/${relatorioId}` : '#'}
+                        target={relatorioFinalizado ? '_blank' : undefined}
+                        title={relatorioFinalizado ? 'Abrir para impressão' : 'Finalize o relatório primeiro'}
+                        class="px-4 py-2 bg-emerald-700 text-white text-xs font-black rounded-lg transition
+                               {relatorioFinalizado ? 'hover:bg-emerald-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
+                        🖨 PLANTÃO
+                    </a>
+
+                    <!-- Relatório Extra -->
+                    <a href={relatorioFinalizado ? `/plantao/extra/${relatorioId}` : '#'}
+                        target={relatorioFinalizado ? '_blank' : undefined}
+                        title={relatorioFinalizado ? 'Abrir relatório extra' : 'Finalize o relatório primeiro'}
+                        class="px-4 py-2 bg-cyan-700 text-white text-xs font-black rounded-lg transition
+                               {relatorioFinalizado ? 'hover:bg-cyan-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
+                        📋 EXTRA
+                    </a>
                 </div>
-                {#if !relatorioFinalizado}
+
+                <!-- Protocolo após finalização / dica -->
+                {#if relatorioFinalizado}
+                    <p class="text-center mt-3 font-mono text-emerald-400 font-black text-sm tracking-widest">
+                        ✅ {protocoloGerado}
+                        <a href="/plantao" class="ml-4 text-[10px] border border-slate-600 text-slate-400 px-3 py-1 rounded-lg hover:bg-slate-800 transition font-sans font-bold uppercase">+ Novo</a>
+                    </p>
+                {:else if temErrosHorario}
+                    <p class="text-red-400 text-[10px] text-center mt-2 font-bold">⚠ Corrija os erros de horário para habilitar a finalização</p>
+                {:else}
                     <p class="text-slate-600 text-[10px] text-center mt-2 uppercase tracking-wider">
-                        Os botões de impressão serão habilitados após a finalização
+                        🖨 PLANTÃO e 📋 EXTRA serão habilitados após a finalização
                     </p>
                 {/if}
             </div>
