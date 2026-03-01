@@ -351,7 +351,15 @@
                         class="text-xs border border-slate-600 text-slate-400 px-3 py-1 rounded hover:bg-slate-800 transition">
                         ← Voltar
                     </a>
-                    <a href="/logout" class="text-xs text-slate-500 hover:text-red-400 text-center transition">Sair</a>
+                    <a href="/logout"
+                        class="flex items-center gap-1.5 bg-red-950/60 border border-red-700/50 text-red-400 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-700 hover:text-white hover:border-red-600 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Sair
+                    </a>
                 </div>
             </div>
         </header>
