@@ -255,6 +255,8 @@
     }
 </script>
 
+<svelte:window onbeforeunload={(e) => { if (isDirty && !relatorioFinalizado) { e.preventDefault(); } }} />
+
 <svelte:head>
     <title>Relatório de Plantão — DPI SUL</title>
 </svelte:head>

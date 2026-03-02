@@ -38,8 +38,8 @@ export const handle: Handle = async ({ event, resolve }) => {
                     cargo: sessao.cargo
                 };
             }
-        } catch {
-            // Silently ignore DB errors on session check
+        } catch (err) {
+            console.error('Erro ao verificar sessão:', err);
         }
     }
 
