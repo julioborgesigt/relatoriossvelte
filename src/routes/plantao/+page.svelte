@@ -796,32 +796,32 @@
 
             <!-- ── Barra de ações unificada ───────────────────────────────────── -->
             <div class="pt-6 border-t border-[#c5a059]/30">
-                <div class="flex flex-wrap justify-center gap-2">
+                <div class="grid grid-cols-3 md:grid-cols-6 gap-1.5">
 
                     <!-- Salvar Rascunho -->
                     <button type="submit" name="acao" value="rascunho"
                         disabled={carregando || relatorioFinalizado}
-                        class="px-4 py-2 border border-slate-500 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                        💾 SALVAR RASCUNHO
+                        class="py-2.5 border border-slate-500 text-slate-300 text-[10px] font-bold rounded-lg hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed text-center">
+                        💾 SALVAR
                     </button>
 
                     <!-- Retomar Rascunho -->
                     <button type="button" onclick={() => mostrarModalRascunho = true}
                         disabled={relatorioFinalizado}
-                        class="px-4 py-2 border border-slate-500 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                        ↩ RETOMAR RASCUNHO
+                        class="py-2.5 border border-slate-500 text-slate-300 text-[10px] font-bold rounded-lg hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed text-center">
+                        ↩ RETOMAR
                     </button>
 
                     <!-- Retificar: link direto se já finalizado, modal de protocolo caso contrário -->
                     {#if relatorioFinalizado}
                         <a href="/plantao/retificar/{relatorioId}"
-                            class="px-4 py-2 bg-amber-500 text-black text-xs font-black rounded-lg hover:brightness-110 transition">
-                            ✏️ RETIFICAR RELATÓRIO
+                            class="py-2.5 bg-amber-500 text-black text-[10px] font-black rounded-lg hover:brightness-110 transition text-center">
+                            ✏️ RETIFICAR
                         </a>
                     {:else}
                         <button type="button" onclick={() => mostrarModalRetificar = true}
-                            class="px-4 py-2 bg-amber-500/80 text-black text-xs font-black rounded-lg hover:bg-amber-500 transition">
-                            ✏️ RETIFICAR RELATÓRIO
+                            class="py-2.5 bg-amber-500/80 text-black text-[10px] font-black rounded-lg hover:bg-amber-500 transition text-center">
+                            ✏️ RETIFICAR
                         </button>
                     {/if}
 
@@ -830,8 +830,8 @@
                         <button type="submit" name="acao" value="finalizar"
                             disabled={carregando || temErrosHorario}
                             title={temErrosHorario ? 'Corrija os erros de horário antes de finalizar' : undefined}
-                            class="px-4 py-2 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-xs font-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                            {carregando ? 'PROCESSANDO...' : '✓ FINALIZAR RELATÓRIO'}
+                            class="py-2.5 bg-gradient-to-r from-[#8a6d3b] to-[#c5a059] text-[#0a192f] text-[10px] font-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed text-center">
+                            {carregando ? '...' : '✓ FINALIZAR'}
                         </button>
                     {/if}
 
@@ -839,7 +839,7 @@
                     <a href={relatorioFinalizado ? `/plantao/imprimir/${relatorioId}` : '#'}
                         target={relatorioFinalizado ? '_blank' : undefined}
                         title={relatorioFinalizado ? 'Abrir para impressão' : 'Finalize o relatório primeiro'}
-                        class="px-4 py-2 bg-emerald-700 text-white text-xs font-black rounded-lg transition
+                        class="py-2.5 bg-emerald-700 text-white text-[10px] font-black rounded-lg transition text-center
                                {relatorioFinalizado ? 'hover:bg-emerald-600 cursor-pointer' : 'opacity-40 cursor-not-allowed pointer-events-none'}">
                         🖨 PLANTÃO
                     </a>
@@ -849,7 +849,7 @@
                         disabled={!relatorioFinalizado}
                         onclick={abrirModalExtra}
                         title={relatorioFinalizado ? 'Configurar e gerar relatório extra' : 'Finalize o relatório primeiro'}
-                        class="px-4 py-2 bg-cyan-700 text-white text-xs font-black rounded-lg transition
+                        class="py-2.5 bg-cyan-700 text-white text-[10px] font-black rounded-lg transition text-center
                                {relatorioFinalizado ? 'hover:bg-cyan-600' : 'opacity-40 cursor-not-allowed'}">
                         📋 EXTRA
                     </button>
