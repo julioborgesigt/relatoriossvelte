@@ -1,17 +1,25 @@
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ platform, locals }) => {
+const POR_PAGINA = 30;
+
+export const load: PageServerLoad = async ({ platform, locals, url }) => {
     const db = platform?.env.remocoespcce;
-    if (!db) return {
+    const vazio = {
         plantoes: [],
         delegacias: [],
         estatisticas: { total: 0, rascunhos: 0, finalizados: 0, retificados: 0 },
         quantitativos: { bo: 0, guias: 0, apreensoes: 0, presos: 0, medidas: 0, outros: 0 },
+        paginacao: { pagina: 1, porPagina: POR_PAGINA, totalRegistros: 0, totalPaginas: 0 },
         usuario: locals.usuario
     };
 
+    if (!db) return vazio;
+
+    const pagina = Math.max(1, parseInt(url.searchParams.get('pagina') ?? '1') || 1);
+    const offset = (pagina - 1) * POR_PAGINA;
+
     try {
-        const [plantoes, stats, delegacias] = await Promise.all([
+        const [plantoes, totalRes, stats, delegacias] = await Promise.all([
             db.prepare(`
                 SELECT p.id, p.protocolo, p.delegacia, p.data_entrada, p.hora_entrada,
                        p.data_saida, p.hora_saida, p.status, p.nome_responsavel,
@@ -26,8 +34,8 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
                 LEFT JOIN plantoes_procedimentos pr ON pr.plantao_id = p.id
                 GROUP BY p.id
                 ORDER BY p.criado_em DESC
-                LIMIT 200
-            `).all<{
+                LIMIT ? OFFSET ?
+            `).bind(POR_PAGINA, offset).all<{
                 id: number; protocolo: string; delegacia: string; data_entrada: string;
                 hora_entrada: string; data_saida: string; hora_saida: string; status: string;
                 nome_responsavel: string; q_bo: number; q_guias: number; q_apreensoes: number;
@@ -35,6 +43,7 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
                 total_equipe: number; total_procedimentos: number;
                 servidores_equipe: string | null; tipos_procedimento: string | null;
             }>(),
+            db.prepare(`SELECT COUNT(*) as total FROM plantoes`).first<{ total: number }>(),
             db.prepare(`
                 SELECT
                     COUNT(*) as total,
@@ -60,9 +69,11 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
             `).all<{ delegacia: string }>()
         ]);
 
+        const totalRegistros = totalRes?.total ?? 0;
+
         return {
             plantoes: plantoes.results ?? [],
-            delegacias: delegacias.results?.map(d => d.delegacia) ?? [],
+            delegacias: delegacias.results?.map((d: { delegacia: string }) => d.delegacia) ?? [],
             estatisticas: {
                 total: stats?.total ?? 0,
                 rascunhos: stats?.rascunhos ?? 0,
@@ -77,16 +88,16 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
                 medidas: stats?.total_medidas ?? 0,
                 outros: stats?.total_outros ?? 0
             },
+            paginacao: {
+                pagina,
+                porPagina: POR_PAGINA,
+                totalRegistros,
+                totalPaginas: Math.ceil(totalRegistros / POR_PAGINA)
+            },
             usuario: locals.usuario
         };
     } catch (err) {
         console.error('Erro no dashboard:', err);
-        return {
-            plantoes: [],
-            delegacias: [],
-            estatisticas: { total: 0, rascunhos: 0, finalizados: 0, retificados: 0 },
-            quantitativos: { bo: 0, guias: 0, apreensoes: 0, presos: 0, medidas: 0, outros: 0 },
-            usuario: locals.usuario
-        };
+        return vazio;
     }
 };

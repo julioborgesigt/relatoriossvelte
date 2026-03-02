@@ -1,6 +1,24 @@
 <script lang="ts">
     import type { PageData } from './$types';
+    import { goto } from '$app/navigation';
     let { data }: { data: PageData } = $props();
+
+    type Plantao = {
+        id: number; protocolo: string; delegacia: string; data_entrada: string;
+        hora_entrada: string; data_saida: string; hora_saida: string; status: string;
+        nome_responsavel: string; q_bo: number; q_guias: number; q_apreensoes: number;
+        q_presos: number; q_medidas: number; q_outros: number; criado_em: string;
+        total_equipe: number; total_procedimentos: number;
+        servidores_equipe: string | null; tipos_procedimento: string | null;
+    };
+
+    // Paginação
+    const pag = $derived(data.paginacao ?? { pagina: 1, totalPaginas: 1, totalRegistros: 0, porPagina: 30 });
+    function irParaPagina(p: number) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('pagina', String(p));
+        goto(url.toString(), { invalidateAll: true });
+    }
 
     // ── Filtros ────────────────────────────────────────────────────────────────
     let busca          = $state('');
@@ -25,7 +43,7 @@
 
     // ── Filtragem reativa ──────────────────────────────────────────────────────
     const plantoesVisiveis = $derived(
-        data.plantoes.filter(p => {
+        (data.plantoes as Plantao[]).filter((p: Plantao) => {
             if (filtroStatus && p.status !== filtroStatus) return false;
             if (filtroDelegacia && p.delegacia !== filtroDelegacia) return false;
             if (filtroDataDe && p.data_entrada < filtroDataDe) return false;
@@ -50,15 +68,15 @@
     // Stats calculadas sobre os registros filtrados
     const stats = $derived({
         total:       plantoesVisiveis.length,
-        finalizados: plantoesVisiveis.filter(p => p.status === 'finalizado').length,
-        retificados: plantoesVisiveis.filter(p => p.status === 'retificado').length,
-        rascunhos:   plantoesVisiveis.filter(p => p.status === 'rascunho').length,
-        presos:      plantoesVisiveis.reduce((s, p) => s + (p.q_presos ?? 0), 0),
-        apreensoes:  plantoesVisiveis.reduce((s, p) => s + (p.q_apreensoes ?? 0), 0),
-        bo:          plantoesVisiveis.reduce((s, p) => s + (p.q_bo ?? 0), 0),
-        guias:       plantoesVisiveis.reduce((s, p) => s + (p.q_guias ?? 0), 0),
-        medidas:     plantoesVisiveis.reduce((s, p) => s + (p.q_medidas ?? 0), 0),
-        outros:      plantoesVisiveis.reduce((s, p) => s + (p.q_outros ?? 0), 0),
+        finalizados: plantoesVisiveis.filter((p: Plantao) => p.status === 'finalizado').length,
+        retificados: plantoesVisiveis.filter((p: Plantao) => p.status === 'retificado').length,
+        rascunhos:   plantoesVisiveis.filter((p: Plantao) => p.status === 'rascunho').length,
+        presos:      plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_presos ?? 0), 0),
+        apreensoes:  plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_apreensoes ?? 0), 0),
+        bo:          plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_bo ?? 0), 0),
+        guias:       plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_guias ?? 0), 0),
+        medidas:     plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_medidas ?? 0), 0),
+        outros:      plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_outros ?? 0), 0),
     });
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -405,6 +423,31 @@
                 </div>
             {/if}
         </div>
+
+        <!-- Paginação server-side -->
+        {#if pag.totalPaginas > 1}
+            <div class="mt-4 flex items-center justify-center gap-2">
+                <button type="button" onclick={() => irParaPagina(pag.pagina - 1)}
+                    disabled={pag.pagina <= 1}
+                    class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    Anterior
+                </button>
+                {#each Array.from({ length: pag.totalPaginas }, (_, i) => i + 1).filter(p => p === 1 || p === pag.totalPaginas || Math.abs(p - pag.pagina) <= 2) as p}
+                    <button type="button" onclick={() => irParaPagina(p)}
+                        class="px-3 py-1.5 text-xs font-bold rounded-lg transition {p === pag.pagina ? 'bg-[#c5a059] text-[#0a192f]' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}">
+                        {p}
+                    </button>
+                {/each}
+                <button type="button" onclick={() => irParaPagina(pag.pagina + 1)}
+                    disabled={pag.pagina >= pag.totalPaginas}
+                    class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    Proxima
+                </button>
+                <span class="text-xs text-slate-400 ml-2">
+                    {pag.totalRegistros} registro(s)
+                </span>
+            </div>
+        {/if}
 
     </main>
 </div>

@@ -2,6 +2,28 @@
 -- MIGRAÇÃO INICIAL - Sistema de Plantões DPI SUL
 -- Criado para Cloudflare D1 (SQLite)
 -- ============================================================
+--
+-- CONVENÇÕES DO BANCO DE DADOS:
+--
+-- 1. DATAS: Todas as colunas de data/hora usam TEXT em formato ISO 8601.
+--    - Campos datetime: "YYYY-MM-DDTHH:mm:ss.sssZ" (UTC)
+--      Ex: criado_em, expira_em, atualizado_em
+--    - Campos date: "YYYY-MM-DD"
+--      Ex: data_entrada, data_saida
+--    - Campos time: "HH:mm"
+--      Ex: hora_entrada, hora_saida
+--
+-- 2. JSON: Colunas TEXT que armazenam arrays JSON (desnormalizadas).
+--    - vitimas_json: '["NOME 1", "NOME 2"]'
+--    - suspeitos_json: '["NOME 1", "NOME 2"]'
+--    Justificativa: Vítimas e suspeitos são exibidos apenas dentro
+--    do procedimento pai; não há necessidade de queries por envolvido.
+--
+-- 3. MIGRAÇÕES: Cada arquivo segue o padrão NNNN_descricao.sql.
+--    Execute em ordem crescente. Use os scripts npm:
+--    - npm run db:migrate:local  (desenvolvimento)
+--    - npm run db:migrate:remote (produção)
+-- ============================================================
 
 -- Tabela de servidores (efetivo policial)
 CREATE TABLE IF NOT EXISTS servidores (
