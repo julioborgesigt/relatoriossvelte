@@ -69,7 +69,7 @@ export const actions: Actions = {
             }
 
             if (acao === 'finalizar') {
-                return { sucesso: true, acao: 'finalizado', protocolo, id: plantaoId };
+                return { sucesso: true, acao: 'finalizado', mensagem: `Relatório finalizado! Protocolo: ${protocolo}`, protocolo, id: plantaoId };
             }
 
             return { sucesso: true, mensagem: `Rascunho salvo! Protocolo: ${protocolo}`, protocolo };

@@ -206,6 +206,21 @@
         }
     }
 
+    // Máscara para número do procedimento: xxx-xxxxx/xxxx
+    function mascaraProcedimento(e: Event) {
+        const input = e.target as HTMLInputElement;
+        let v = input.value.replace(/\D/g, '').slice(0, 12);
+        if (v.length > 3) v = v.slice(0, 3) + '-' + v.slice(3);
+        if (v.length > 9) v = v.slice(0, 9) + '/' + v.slice(9);
+        input.value = v;
+        // Atualizar o bind:value via evento de input
+        const idx = parseInt(input.name.match(/proc_(\d+)_numero/)?.[1] ?? '-1');
+        if (idx >= 0) {
+            const proc = procedimentos.find((_, i) => i === idx);
+            if (proc) proc.numero = v;
+        }
+    }
+
     // Efeito: detecta finalização e rascunho
     $effect(() => {
         if (form && 'sucesso' in form && form.sucesso) {
@@ -728,8 +743,10 @@
                                 <div>
                                     <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Número do Procedimento</label>
                                     <input type="text" name="proc_{idx}_numero" bind:value={proc.numero}
-                                        placeholder="Ex: 2024.000.123456"
-                                        class="w-full bg-black/30 border border-current/30 text-white p-2 rounded-lg text-sm outline-none focus:ring-1 focus:ring-current font-mono uppercase" />
+                                        placeholder="000-00000/0000"
+                                        maxlength="14"
+                                        oninput={mascaraProcedimento}
+                                        class="w-full bg-black/30 border border-current/30 text-white p-2 rounded-lg text-sm outline-none focus:ring-1 focus:ring-current font-mono" />
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Natureza / Infração *</label>
