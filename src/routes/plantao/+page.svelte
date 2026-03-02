@@ -396,8 +396,9 @@
 
 <!-- Indicador de alterações não salvas -->
 {#if isDirty}
-    <div class="fixed top-0 left-0 right-0 z-40 bg-yellow-600 text-yellow-900 text-center text-xs font-bold py-1 tracking-wider">
-        ⚠ Alterações não salvas
+    <div class="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 bg-yellow-500/15 backdrop-blur-xl border border-yellow-500/30 text-yellow-300 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-yellow-500/10 animate-fade-in">
+        <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+        Alterações não salvas
     </div>
 {/if}
 
@@ -430,32 +431,13 @@
     </div>
 {/if}
 
-<div class="min-h-screen bg-[#0a192f] p-4 md:p-8 text-white font-sans" class:pt-8={isDirty}>
+<div class="min-h-screen bg-[#0a192f] p-4 md:p-8 text-white font-sans">
     <div class="max-w-4xl mx-auto">
 
         <!-- Header -->
-        <header class="mb-6 flex justify-between items-start border-b border-[#c5a059] pb-4 flex-wrap gap-3">
-            <div>
-                <h1 class="text-2xl font-black text-[#c5a059] tracking-tight uppercase">Relatório de Plantão</h1>
-                <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">DPI SUL — Formulário Oficial</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="text-right">
-                    <span class="text-xs font-bold text-[#c5a059]">{data.usuario?.nome ?? 'Usuário'}</span>
-                    <span class="block text-xs text-slate-500 font-mono">{data.usuario?.matricula ?? ''}</span>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <a href="/logout"
-                        class="flex items-center gap-1.5 bg-red-950/60 border border-red-700/50 text-red-400 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-700 hover:text-white hover:border-red-600 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/>
-                            <line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
-                        Sair
-                    </a>
-                </div>
-            </div>
+        <header class="mb-6 border-b border-[#c5a059] pb-4">
+            <h1 class="text-2xl font-black text-[#c5a059] tracking-tight uppercase">Relatório de Plantão</h1>
+            <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Formulário Oficial</p>
         </header>
 
         {#if form && 'erro' in form && form.erro}
