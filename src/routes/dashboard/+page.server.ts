@@ -1,16 +1,16 @@
 import type { PageServerLoad } from './$types';
+import type { PlantaoListItem } from '$lib/types';
 
 const POR_PAGINA = 30;
 
-export const load: PageServerLoad = async ({ platform, locals, url }) => {
+export const load: PageServerLoad = async ({ platform, url }) => {
     const db = platform?.env.remocoespcce;
     const vazio = {
-        plantoes: [],
-        delegacias: [],
+        plantoes: [] as PlantaoListItem[],
+        delegacias: [] as string[],
         estatisticas: { total: 0, rascunhos: 0, finalizados: 0, retificados: 0 },
         quantitativos: { bo: 0, guias: 0, apreensoes: 0, presos: 0, medidas: 0, outros: 0 },
         paginacao: { pagina: 1, porPagina: POR_PAGINA, totalRegistros: 0, totalPaginas: 0 },
-        usuario: locals.usuario
     };
 
     if (!db) return vazio;
@@ -35,14 +35,7 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
                 GROUP BY p.id
                 ORDER BY p.criado_em DESC
                 LIMIT ? OFFSET ?
-            `).bind(POR_PAGINA, offset).all<{
-                id: number; protocolo: string; delegacia: string; data_entrada: string;
-                hora_entrada: string; data_saida: string; hora_saida: string; status: string;
-                nome_responsavel: string; q_bo: number; q_guias: number; q_apreensoes: number;
-                q_presos: number; q_medidas: number; q_outros: number; criado_em: string;
-                total_equipe: number; total_procedimentos: number;
-                servidores_equipe: string | null; tipos_procedimento: string | null;
-            }>(),
+            `).bind(POR_PAGINA, offset).all<PlantaoListItem>(),
             db.prepare(`SELECT COUNT(*) as total FROM plantoes`).first<{ total: number }>(),
             db.prepare(`
                 SELECT
@@ -94,7 +87,6 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
                 totalRegistros,
                 totalPaginas: Math.ceil(totalRegistros / POR_PAGINA)
             },
-            usuario: locals.usuario
         };
     } catch (err) {
         console.error('Erro no dashboard:', err);

@@ -1,21 +1,18 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { parseFormularioPlantao, validarHorarios, criarBatchEquipeProcedimentos } from '$lib/server/parseFormData';
+import { buscarDelegacias, buscarServidores } from '$lib/server/plantaoQueries';
 
-export const load: PageServerLoad = async ({ platform, locals }) => {
+export const load: PageServerLoad = async ({ platform }) => {
     const db = platform?.env.remocoespcce;
-    if (!db) return { delegacias: [], servidores: [], usuario: locals.usuario };
+    if (!db) return { delegacias: [], servidores: [] };
 
-    const [delegaciasRes, servidoresRes] = await Promise.all([
-        db.prepare(`SELECT nome FROM delegacias WHERE status = 'SIM' OR status = 'TEMPORARIO' ORDER BY nome`).all<{ nome: string }>(),
-        db.prepare(`SELECT nome, matricula, cargo, classe, lotacao FROM servidores WHERE ativo = 1 ORDER BY nome`).all<{ nome: string; matricula: string; cargo: string; classe: string; lotacao: string }>()
+    const [delegacias, servidores] = await Promise.all([
+        buscarDelegacias(db),
+        buscarServidores(db)
     ]);
 
-    return {
-        delegacias: delegaciasRes.results ?? [],
-        servidores: servidoresRes.results ?? [],
-        usuario: locals.usuario
-    };
+    return { delegacias, servidores };
 };
 
 function gerarProtocolo(id: number): string {

@@ -1,52 +1,32 @@
 import { fail, error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { parseFormularioPlantao, validarHorarios, criarBatchEquipeProcedimentos } from '$lib/server/parseFormData';
+import { getDb } from '$lib/server/db';
+import { buscarPlantao, buscarEquipe, buscarProcedimentos, buscarDelegacias, buscarServidores } from '$lib/server/plantaoQueries';
 
 export const load: PageServerLoad = async ({ params, platform, locals }) => {
     if (!locals.usuario) throw redirect(302, '/login');
 
-    const db = platform?.env.remocoespcce;
-    if (!db) throw error(500, 'Banco de dados não configurado.');
-
+    const db = getDb(platform);
     const id = parseInt(params.id);
 
-    const [plantao, equipe, procedimentos, delegaciasRes, servidoresRes] = await Promise.all([
-        db.prepare(`SELECT * FROM plantoes WHERE id = ?`).bind(id).first<{
-            id: number; protocolo: string; delegacia: string;
-            data_entrada: string; hora_entrada: string;
-            data_saida: string; hora_saida: string;
-            observacoes: string; status: string;
-            q_bo: number; q_guias: number; q_apreensoes: number;
-            q_presos: number; q_medidas: number; q_outros: number;
-        }>(),
-        db.prepare(`SELECT * FROM plantoes_equipe WHERE plantao_id = ?`).bind(id).all<{
-            nome_servidor: string; matricula: string; cargo: string; classe: string;
-            escala: string; data_entrada: string; hora_entrada: string;
-            data_saida: string; hora_saida: string;
-        }>(),
-        db.prepare(`SELECT * FROM plantoes_procedimentos WHERE plantao_id = ?`).bind(id).all<{
-            tipo: string; numero: string; natureza: string; envolvidos: string;
-            resumo: string; vitimas_json: string; suspeitos_json: string;
-        }>(),
-        db.prepare(`SELECT nome FROM delegacias WHERE status = 'SIM' OR status = 'TEMPORARIO' ORDER BY nome`).all<{ nome: string }>(),
-        db.prepare(`SELECT nome, matricula, cargo, classe, lotacao FROM servidores WHERE ativo = 1 ORDER BY nome`).all<{ nome: string; matricula: string; cargo: string; classe: string; lotacao: string }>()
+    const [plantao, equipeOriginal, procedimentosOriginal, delegacias, servidores] = await Promise.all([
+        buscarPlantao(db, id),
+        buscarEquipe(db, id),
+        buscarProcedimentos(db, id),
+        buscarDelegacias(db),
+        buscarServidores(db)
     ]);
 
-    if (!plantao) throw error(404, 'Relatório não encontrado.');
     if (!['finalizado', 'retificado'].includes(plantao.status))
         throw error(400, 'Apenas relatórios finalizados podem ser retificados.');
 
     return {
         original: plantao,
-        equipeOriginal: equipe.results ?? [],
-        procedimentosOriginal: (procedimentos.results ?? []).map((p: { tipo: string; numero: string; natureza: string; envolvidos: string; resumo: string; vitimas_json: string; suspeitos_json: string }) => ({
-            ...p,
-            vitimas: p.vitimas_json ? JSON.parse(p.vitimas_json) as string[] : [],
-            suspeitos: p.suspeitos_json ? JSON.parse(p.suspeitos_json) as string[] : []
-        })),
-        delegacias: delegaciasRes.results ?? [],
-        servidores: servidoresRes.results ?? [],
-        usuario: locals.usuario
+        equipeOriginal,
+        procedimentosOriginal,
+        delegacias,
+        servidores,
     };
 };
 

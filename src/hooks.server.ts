@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit';
+import type { Usuario } from '$lib/types';
 
 // Rotas que não precisam de autenticação
 const ROTAS_PUBLICAS = ['/login', '/api/'];
@@ -21,22 +22,10 @@ export const handle: Handle = async ({ event, resolve }) => {
             const sessao = await db
                 .prepare(`SELECT * FROM sessoes WHERE session_id = ? AND expira_em > ? LIMIT 1`)
                 .bind(sessionId, agora)
-                .first<{
-                    matricula: string;
-                    nome: string;
-                    email: string;
-                    lotacao: string | null;
-                    cargo: string | null;
-                }>();
+                .first<Usuario>();
 
             if (sessao) {
-                event.locals.usuario = {
-                    matricula: sessao.matricula,
-                    nome: sessao.nome,
-                    email: sessao.email,
-                    lotacao: sessao.lotacao,
-                    cargo: sessao.cargo
-                };
+                event.locals.usuario = sessao;
             }
         } catch (err) {
             console.error('Erro ao verificar sessão:', err);
