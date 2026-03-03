@@ -32,8 +32,7 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
 
 export const actions: Actions = {
     finalizar: async ({ request, platform, locals, params }) => {
-        const db = platform?.env.remocoespcce;
-        if (!db) return fail(500, { erro: 'Banco de dados não configurado.' });
+        const db = getDb(platform);
 
         const usuario = locals.usuario;
         if (!usuario) return fail(401, { erro: 'Sessão expirada. Faça login novamente.' });

@@ -170,7 +170,7 @@
                 membro.nome     = encontrado.nome;
                 membro.matricula = encontrado.matricula;
                 membro.cargo    = encontrado.cargo || '';
-                membro.lotacao  = (encontrado as any).lotacao || '';
+                membro.lotacao  = encontrado.lotacao || '';
             }
         }
     }

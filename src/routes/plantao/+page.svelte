@@ -21,7 +21,6 @@
         nome: string;
         matricula: string;
         cargo: string;
-        classe: string;
         telefone: string;
         lotacao: string;
         escala: 'Normal' | 'Extraordinaria';
@@ -46,7 +45,7 @@
 
     // Equipe
     let equipe = $state<Membro[]>([{
-        id: 0, nome: '', matricula: '', cargo: '', classe: '', telefone: '', lotacao: '',
+        id: 0, nome: '', matricula: '', cargo: '', telefone: '', lotacao: '',
         escala: 'Normal', data_entrada: '', hora_entrada: '',
         data_saida: '', hora_saida: '', mostrarHorario: false
     }]);
@@ -103,7 +102,7 @@
 
     function adicionarMembro() {
         equipe.push({
-            id: nextMembroId++, nome: '', matricula: '', cargo: '', classe: '', telefone: '', lotacao: '',
+            id: nextMembroId++, nome: '', matricula: '', cargo: '', telefone: '', lotacao: '',
             escala: 'Normal', data_entrada: data_entrada, hora_entrada: hora_entrada,
             data_saida: data_saida, hora_saida: hora_saida, mostrarHorario: false
         });
@@ -124,11 +123,10 @@
         if (encontrado) {
             const membro = equipe.find(m => m.id === membroId);
             if (membro) {
-                membro.nome     = encontrado.nome;
+                membro.nome      = encontrado.nome;
                 membro.matricula = encontrado.matricula;
-                membro.cargo    = encontrado.cargo || '';
-                membro.classe   = encontrado.classe || '';
-                membro.lotacao  = (encontrado as any).lotacao || '';
+                membro.cargo     = encontrado.cargo || '';
+                membro.lotacao   = encontrado.lotacao || '';
             }
         }
         marcarDirty();
