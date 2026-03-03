@@ -1,5 +1,7 @@
 <script lang="ts">
     import type { PageData } from './$types';
+    import { formatarData, formatarProtocolo, calcularHoras } from '$lib/utils';
+
     let { data }: { data: PageData } = $props();
     const p = data.plantao;
     const equipeExtra = data.equipeExtra;
@@ -11,7 +13,7 @@
     let mostrarModalConfig = $state(!config.dir);
     let justificativa = $state(
         config.just ||
-        `O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial, conforme relatório de plantão ${p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`}.`
+        `O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial, conforme relatório de plantão ${formatarProtocolo(p.protocolo, p.id)}.`
     );
     let nomeDiretor = $state(config.dir);
 
@@ -37,30 +39,6 @@
     function confirmarConfig() {
         if (!nomeDiretor.trim() || membrosIncluidos.length === 0) return;
         mostrarModalConfig = false;
-    }
-
-    // ── Utilitários ───────────────────────────────────────────────────────────
-    function formatarData(d: string | null | undefined): string {
-        if (!d) return '—';
-        const [y, m, dd] = d.split('-');
-        return `${dd}/${m}/${y}`;
-    }
-
-    function calcularHoras(entrada_data: string, entrada_hora: string, saida_data: string, saida_hora: string): string {
-        if (!entrada_data || !entrada_hora || !saida_data || !saida_hora) {
-            return '—';
-        }
-        try {
-            const de = new Date(`${entrada_data}T${entrada_hora}`);
-            const ate = new Date(`${saida_data}T${saida_hora}`);
-            const diff = (ate.getTime() - de.getTime()) / (1000 * 60 * 60);
-            if (isNaN(diff) || diff < 0) return '—';
-            const h = Math.floor(diff);
-            const m = Math.round((diff - h) * 60);
-            return `${h}h${m > 0 ? m + 'm' : ''}`;
-        } catch {
-            return '—';
-        }
     }
 </script>
 
@@ -205,7 +183,7 @@
                 </div>
                 <div class="text-right text-[9px] leading-tight">
                     <p class="font-bold">Ref. Protocolo:</p>
-                    <p class="font-mono text-[12px] font-black">{p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`}</p>
+                    <p class="font-mono text-[12px] font-black">{formatarProtocolo(p.protocolo, p.id)}</p>
                     <p class="text-gray-500">{ano}</p>
                 </div>
             </div>
@@ -297,7 +275,7 @@
 
         <footer class="mt-8 pt-2 border-t border-gray-300 text-[8px] text-gray-400 flex justify-between">
             <span>Emitido em: {new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
-            <span>Ref. Protocolo: {p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`} — DPI SUL</span>
+            <span>Ref. Protocolo: {formatarProtocolo(p.protocolo, p.id)} — DPI SUL</span>
         </footer>
     </div>
 </div>

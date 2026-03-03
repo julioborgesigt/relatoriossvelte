@@ -1,16 +1,10 @@
 <script lang="ts">
     import type { PageData } from './$types';
+    import type { PlantaoListItem } from '$lib/types';
+    import { TIPOS_PROC, COR_TIPO_BADGE } from '$lib/constants';
+    import { formatarData, statusLabel, statusCor, formatarProtocolo } from '$lib/utils';
     import { goto } from '$app/navigation';
     let { data }: { data: PageData } = $props();
-
-    type Plantao = {
-        id: number; protocolo: string; delegacia: string; data_entrada: string;
-        hora_entrada: string; data_saida: string; hora_saida: string; status: string;
-        nome_responsavel: string; q_bo: number; q_guias: number; q_apreensoes: number;
-        q_presos: number; q_medidas: number; q_outros: number; criado_em: string;
-        total_equipe: number; total_procedimentos: number;
-        servidores_equipe: string | null; tipos_procedimento: string | null;
-    };
 
     // Paginação
     const pag = $derived(data.paginacao ?? { pagina: 1, totalPaginas: 1, totalRegistros: 0, porPagina: 30 });
@@ -29,8 +23,6 @@
     let filtroServidor = $state('');
     let filtroTipoProc = $state('');
 
-    const TIPOS_PROC = ['IP-FLAGRANTE', 'IP-PORTARIA', 'TCO', 'AI/BOC'];
-
     const filtrosAtivos = $derived(
         [busca, filtroStatus, filtroDelegacia, filtroDataDe, filtroDataAte, filtroServidor, filtroTipoProc]
             .filter(Boolean).length
@@ -43,7 +35,7 @@
 
     // ── Filtragem reativa ──────────────────────────────────────────────────────
     const plantoesVisiveis = $derived(
-        (data.plantoes as Plantao[]).filter((p: Plantao) => {
+        (data.plantoes as PlantaoListItem[]).filter((p: PlantaoListItem) => {
             if (filtroStatus && p.status !== filtroStatus) return false;
             if (filtroDelegacia && p.delegacia !== filtroDelegacia) return false;
             if (filtroDataDe && p.data_entrada < filtroDataDe) return false;
@@ -68,40 +60,72 @@
     // Stats calculadas sobre os registros filtrados
     const stats = $derived({
         total:       plantoesVisiveis.length,
-        finalizados: plantoesVisiveis.filter((p: Plantao) => p.status === 'finalizado').length,
-        retificados: plantoesVisiveis.filter((p: Plantao) => p.status === 'retificado').length,
-        rascunhos:   plantoesVisiveis.filter((p: Plantao) => p.status === 'rascunho').length,
-        presos:      plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_presos ?? 0), 0),
-        apreensoes:  plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_apreensoes ?? 0), 0),
-        bo:          plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_bo ?? 0), 0),
-        guias:       plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_guias ?? 0), 0),
-        medidas:     plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_medidas ?? 0), 0),
-        outros:      plantoesVisiveis.reduce((s: number, p: Plantao) => s + (p.q_outros ?? 0), 0),
+        finalizados: plantoesVisiveis.filter((p: PlantaoListItem) => p.status === 'finalizado').length,
+        retificados: plantoesVisiveis.filter((p: PlantaoListItem) => p.status === 'retificado').length,
+        rascunhos:   plantoesVisiveis.filter((p: PlantaoListItem) => p.status === 'rascunho').length,
+        presos:      plantoesVisiveis.reduce((s: number, p: PlantaoListItem) => s + (p.q_presos ?? 0), 0),
+        apreensoes:  plantoesVisiveis.reduce((s: number, p: PlantaoListItem) => s + (p.q_apreensoes ?? 0), 0),
+        bo:          plantoesVisiveis.reduce((s: number, p: PlantaoListItem) => s + (p.q_bo ?? 0), 0),
+        guias:       plantoesVisiveis.reduce((s: number, p: PlantaoListItem) => s + (p.q_guias ?? 0), 0),
+        medidas:     plantoesVisiveis.reduce((s: number, p: PlantaoListItem) => s + (p.q_medidas ?? 0), 0),
+        outros:      plantoesVisiveis.reduce((s: number, p: PlantaoListItem) => s + (p.q_outros ?? 0), 0),
     });
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
-    function formatarData(d: string | null | undefined): string {
-        if (!d) return '—';
-        const [y, m, dd] = d.split('-');
-        return `${dd}/${m}/${y}`;
+    /** Retorna classe CSS do badge de tipo de procedimento */
+    function corTipoBadge(tipo: string): string {
+        return COR_TIPO_BADGE[tipo] ?? 'bg-purple-100 text-purple-600';
     }
 
-    function statusLabel(s: string): string {
-        return s === 'finalizado' ? 'Finalizado'
-             : s === 'retificado' ? 'Retificado'
-             : s === 'rascunho'   ? 'Rascunho'
-             : s;
-    }
-
-    function statusCor(status: string): string {
-        switch (status) {
-            case 'finalizado': return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
-            case 'rascunho':   return 'bg-yellow-100 text-yellow-700 border border-yellow-200';
-            case 'retificado': return 'bg-blue-100 text-blue-700 border border-blue-200';
-            default:           return 'bg-gray-100 text-gray-700 border border-gray-200';
-        }
+    /** Verifica se o plantão pode ser retificado/ter extra */
+    function ehFinalizadoOuRetificado(status: string): boolean {
+        return status === 'finalizado' || status === 'retificado';
     }
 </script>
+
+{#snippet tipoBadges(tipos: string | null, size: string)}
+    {#if tipos}
+        <div class="flex flex-wrap gap-0.5 {size === 'sm' ? 'justify-center mt-0.5' : 'gap-1 mb-2'}">
+            {#each tipos.split(',') as tipo}
+                <span class="{size === 'sm' ? 'text-[8px]' : 'text-[9px]'} font-bold px-1{size === 'lg' ? '.5 py-0.5' : ''} rounded {corTipoBadge(tipo)}">{tipo}</span>
+            {/each}
+        </div>
+    {/if}
+{/snippet}
+
+{#snippet acoes(p: PlantaoListItem, layout: string)}
+    {#if layout === 'desktop'}
+        <div class="flex justify-center gap-1 flex-wrap">
+            <a href="/plantao/imprimir/{p.id}"
+                class="text-[10px] font-bold px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition whitespace-nowrap"
+                title="Ver/Imprimir">🖨 Imprimir</a>
+            {#if ehFinalizadoOuRetificado(p.status)}
+                <a href="/plantao/imprimir/{p.id}"
+                    class="text-[10px] font-bold px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded text-blue-600 transition whitespace-nowrap"
+                    title="Relatório Extra">📋 Extra</a>
+                <a href="/plantao/retificar/{p.id}"
+                    class="text-[10px] font-bold px-2 py-1 bg-amber-50 hover:bg-amber-100 rounded text-amber-700 transition whitespace-nowrap"
+                    title="Retificar Relatório">✏️ Retificar</a>
+            {/if}
+        </div>
+    {:else}
+        <div class="flex gap-2 mt-2 flex-wrap">
+            <a href="/plantao/imprimir/{p.id}"
+                class="flex-1 text-center text-xs font-bold py-1.5 bg-slate-100 rounded text-slate-600 hover:bg-slate-200 transition">
+                🖨 Imprimir
+            </a>
+            {#if ehFinalizadoOuRetificado(p.status)}
+                <a href="/plantao/imprimir/{p.id}"
+                    class="flex-1 text-center text-xs font-bold py-1.5 bg-blue-50 rounded text-blue-600 hover:bg-blue-100 transition">
+                    📋 Extra
+                </a>
+                <a href="/plantao/retificar/{p.id}"
+                    class="flex-1 text-center text-xs font-bold py-1.5 bg-amber-50 rounded text-amber-700 hover:bg-amber-100 transition">
+                    ✏️ Retificar
+                </a>
+            {/if}
+        </div>
+    {/if}
+{/snippet}
 
 <svelte:head>
     <title>Dashboard — DPI SUL</title>
@@ -116,19 +140,9 @@
             <p class="text-slate-400 text-xs mt-0.5">DPI SUL — Painel de Controle</p>
         </div>
         <div class="flex items-center gap-3">
-            <span class="text-slate-300 text-sm hidden sm:block font-medium">{data.usuario?.nome}</span>
             <a href="/plantao"
                 class="bg-[#c5a059] text-[#0a192f] text-xs font-black px-4 py-2 rounded-lg hover:brightness-110 transition">
                 + NOVO PLANTÃO
-            </a>
-            <a href="/logout"
-                class="flex items-center gap-1.5 bg-red-950/60 border border-red-700/50 text-red-400 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-700 hover:text-white hover:border-red-600 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/>
-                    <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                Sair
             </a>
         </div>
     </header>
@@ -302,7 +316,7 @@
                             {#each plantoesVisiveis as p}
                                 <tr class="hover:bg-slate-50 transition-colors">
                                     <td class="px-4 py-3 font-mono font-bold text-slate-700 text-xs">
-                                        {p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`}
+                                        {formatarProtocolo(p.protocolo, p.id)}
                                         {#if p.status === 'retificado'}
                                             <span class="ml-1 text-[9px] bg-blue-100 text-blue-600 px-1 py-0.5 rounded font-black">RET</span>
                                         {/if}
@@ -321,18 +335,7 @@
                                     <td class="px-4 py-3 text-center">
                                         {#if (p.total_procedimentos ?? 0) > 0}
                                             <span class="font-bold text-slate-700">{p.total_procedimentos}</span>
-                                            {#if p.tipos_procedimento}
-                                                <div class="flex flex-wrap gap-0.5 justify-center mt-0.5">
-                                                    {#each p.tipos_procedimento.split(',') as tipo}
-                                                        <span class="text-[8px] font-bold px-1 rounded {
-                                                            tipo === 'IP-FLAGRANTE' ? 'bg-red-100 text-red-600' :
-                                                            tipo === 'IP-PORTARIA'  ? 'bg-orange-100 text-orange-600' :
-                                                            tipo === 'TCO'          ? 'bg-blue-100 text-blue-600' :
-                                                                                     'bg-purple-100 text-purple-600'
-                                                        }">{tipo}</span>
-                                                    {/each}
-                                                </div>
-                                            {/if}
+                                            {@render tipoBadges(p.tipos_procedimento, 'sm')}
                                         {:else}
                                             <span class="text-slate-300">—</span>
                                         {/if}
@@ -343,21 +346,7 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-center">
-                                        <div class="flex justify-center gap-1 flex-wrap">
-                                            <a href="/plantao/imprimir/{p.id}"
-                                                class="text-[10px] font-bold px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition whitespace-nowrap"
-                                                title="Ver/Imprimir">🖨 Imprimir</a>
-                                            {#if p.status === 'finalizado' || p.status === 'retificado'}
-                                                <a href="/plantao/imprimir/{p.id}"
-                                                    class="text-[10px] font-bold px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded text-blue-600 transition whitespace-nowrap"
-                                                    title="Relatório Extra">📋 Extra</a>
-                                            {/if}
-                                            {#if p.status === 'finalizado' || p.status === 'retificado'}
-                                                <a href="/plantao/retificar/{p.id}"
-                                                    class="text-[10px] font-bold px-2 py-1 bg-amber-50 hover:bg-amber-100 rounded text-amber-700 transition whitespace-nowrap"
-                                                    title="Retificar Relatório">✏️ Retificar</a>
-                                            {/if}
-                                        </div>
+                                        {@render acoes(p, 'desktop')}
                                     </td>
                                 </tr>
                             {/each}
@@ -372,7 +361,7 @@
                             <div class="flex items-start justify-between mb-2">
                                 <div>
                                     <p class="font-mono font-black text-slate-700 text-sm">
-                                        {p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`}
+                                        {formatarProtocolo(p.protocolo, p.id)}
                                         {#if p.status === 'retificado'}
                                             <span class="ml-1 text-[9px] bg-blue-100 text-blue-600 px-1 py-0.5 rounded font-black">RET</span>
                                         {/if}
@@ -388,36 +377,8 @@
                                 {formatarData(p.data_entrada)} {p.hora_entrada ?? ''}
                                 {p.data_saida ? ` → ${formatarData(p.data_saida)} ${p.hora_saida ?? ''}` : ''}
                             </p>
-                            {#if p.tipos_procedimento}
-                                <div class="flex flex-wrap gap-1 mb-2">
-                                    {#each p.tipos_procedimento.split(',') as tipo}
-                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded {
-                                            tipo === 'IP-FLAGRANTE' ? 'bg-red-100 text-red-600' :
-                                            tipo === 'IP-PORTARIA'  ? 'bg-orange-100 text-orange-600' :
-                                            tipo === 'TCO'          ? 'bg-blue-100 text-blue-600' :
-                                                                     'bg-purple-100 text-purple-600'
-                                        }">{tipo}</span>
-                                    {/each}
-                                </div>
-                            {/if}
-                            <div class="flex gap-2 mt-2 flex-wrap">
-                                <a href="/plantao/imprimir/{p.id}"
-                                    class="flex-1 text-center text-xs font-bold py-1.5 bg-slate-100 rounded text-slate-600 hover:bg-slate-200 transition">
-                                    🖨 Imprimir
-                                </a>
-                                {#if p.status === 'finalizado' || p.status === 'retificado'}
-                                    <a href="/plantao/imprimir/{p.id}"
-                                        class="flex-1 text-center text-xs font-bold py-1.5 bg-blue-50 rounded text-blue-600 hover:bg-blue-100 transition">
-                                        📋 Extra
-                                    </a>
-                                {/if}
-                                {#if p.status === 'finalizado' || p.status === 'retificado'}
-                                    <a href="/plantao/retificar/{p.id}"
-                                        class="flex-1 text-center text-xs font-bold py-1.5 bg-amber-50 rounded text-amber-700 hover:bg-amber-100 transition">
-                                        ✏️ Retificar
-                                    </a>
-                                {/if}
-                            </div>
+                            {@render tipoBadges(p.tipos_procedimento, 'lg')}
+                            {@render acoes(p, 'mobile')}
                         </div>
                     {/each}
                 </div>

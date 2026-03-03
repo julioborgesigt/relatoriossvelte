@@ -1,26 +1,16 @@
 <script lang="ts">
     import type { PageData } from './$types';
+    import { formatarData, formatarProtocolo } from '$lib/utils';
+    import { COR_TIPO_PRINT } from '$lib/constants';
+
     let { data }: { data: PageData } = $props();
     const p = $derived(data.plantao);
     const ano = new Date().getFullYear();
-
-    function formatarData(d: string | null | undefined): string {
-        if (!d) return '—';
-        const [y, m, dd] = d.split('-');
-        return `${dd}/${m}/${y}`;
-    }
 
     function totalProcedimentos(): number {
         return (p.q_bo ?? 0) + (p.q_guias ?? 0) + (p.q_apreensoes ?? 0) +
                (p.q_presos ?? 0) + (p.q_medidas ?? 0) + (p.q_outros ?? 0);
     }
-
-    const corTipo: Record<string, string> = {
-        'IP-FLAGRANTE': '#dc2626',
-        'IP-PORTARIA': '#ea580c',
-        'TCO': '#2563eb',
-        'AI/BOC': '#7c3aed'
-    };
 
     // Modal configuração do relatório extra
     let mostrarModalExtra = $state(false);
@@ -189,7 +179,7 @@
                 </div>
                 <div class="text-right text-[9px] leading-tight">
                     <p class="font-bold">Protocolo:</p>
-                    <p class="font-mono text-[12px] font-black">{p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`}</p>
+                    <p class="font-mono text-[12px] font-black">{formatarProtocolo(p.protocolo, p.id)}</p>
                     <p class="text-gray-500">{ano}</p>
                 </div>
             </div>
@@ -284,7 +274,7 @@
                         <div class="p-2 {idx < data.procedimentos.length - 1 ? 'border-b border-black' : ''}">
                             <div class="flex items-baseline gap-3 mb-1.5 flex-wrap">
                                 <span class="font-black text-[10px] uppercase px-1.5 py-0.5 rounded text-white text-[9px]"
-                                    style="background-color: {corTipo[proc.tipo] ?? '#374151'}">
+                                    style="background-color: {COR_TIPO_PRINT[proc.tipo] ?? '#374151'}">
                                     {proc.tipo}
                                 </span>
                                 {#if proc.numero}
@@ -347,7 +337,7 @@
         <!-- Rodapé do documento -->
         <footer class="mt-8 pt-2 border-t border-gray-300 text-[8px] text-gray-400 flex justify-between">
             <span>Emitido em: {new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
-            <span>Protocolo: {p.protocolo ?? `FT-${String(p.id).padStart(6,'0')}`} — DPI SUL</span>
+            <span>Protocolo: {formatarProtocolo(p.protocolo, p.id)} — DPI SUL</span>
         </footer>
     </div>
 </div>

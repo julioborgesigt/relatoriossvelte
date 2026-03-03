@@ -1,11 +1,9 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
     import type { ActionData, PageData } from './$types';
+    import { TIPOS_PROC, COR_TIPO_DARK, type TipoProc } from '$lib/constants';
 
     let { data, form }: { data: PageData; form: ActionData } = $props();
-
-    const TIPOS_PROC = ['IP-FLAGRANTE', 'IP-PORTARIA', 'TCO', 'AI/BOC'] as const;
-    type TipoProc = typeof TIPOS_PROC[number];
 
     type Envolvido = { id: number; texto: string };
     type Procedimento = {
@@ -197,13 +195,7 @@
 
     // Cor do badge por tipo de procedimento
     function corTipo(tipo: string): string {
-        switch (tipo) {
-            case 'IP-FLAGRANTE': return 'bg-red-900/60 border-red-500 text-red-300';
-            case 'IP-PORTARIA': return 'bg-orange-900/60 border-orange-500 text-orange-300';
-            case 'TCO': return 'bg-blue-900/60 border-blue-500 text-blue-300';
-            case 'AI/BOC': return 'bg-purple-900/60 border-purple-500 text-purple-300';
-            default: return 'bg-slate-800 border-slate-600 text-slate-300';
-        }
+        return COR_TIPO_DARK[tipo] ?? 'bg-slate-800 border-slate-600 text-slate-300';
     }
 
     // Máscara para número do procedimento: xxx-xxxxx/xxxx
