@@ -1,5 +1,5 @@
 <script lang="ts">
-    import FormularioPlantao from "$lib/components/FormularioPlantao.svelte";
+    import FormularioPlantao from "$lib/components/FormularioPlantao/index.svelte";
     import type { ActionData, PageData } from "./$types";
 
     let { data, form }: { data: PageData; form: ActionData } = $props();
