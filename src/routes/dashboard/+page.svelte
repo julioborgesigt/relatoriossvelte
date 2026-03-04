@@ -350,10 +350,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                 <div class="sm:col-span-1">
                     <label
+                        for="busca-livre"
                         class="block text-[10px] font-bold uppercase text-slate-400 mb-1"
                         >Busca livre</label
                     >
                     <input
+                        id="busca-livre"
                         bind:value={busca}
                         type="text"
                         placeholder="Protocolo, unidade ou responsável..."
@@ -362,10 +364,12 @@
                 </div>
                 <div>
                     <label
+                        for="filtro-status"
                         class="block text-[10px] font-bold uppercase text-slate-400 mb-1"
                         >Tipo de Relatório</label
                     >
                     <select
+                        id="filtro-status"
                         bind:value={filtroStatus}
                         class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700 bg-white"
                     >
@@ -377,10 +381,12 @@
                 </div>
                 <div>
                     <label
+                        for="filtro-tipo-proc"
                         class="block text-[10px] font-bold uppercase text-slate-400 mb-1"
                         >Tipo de Procedimento</label
                     >
                     <select
+                        id="filtro-tipo-proc"
                         bind:value={filtroTipoProc}
                         class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700 bg-white"
                     >
@@ -396,10 +402,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                     <label
+                        for="filtro-delegacia"
                         class="block text-[10px] font-bold uppercase text-slate-400 mb-1"
                         >Unidade Policial</label
                     >
                     <select
+                        id="filtro-delegacia"
                         bind:value={filtroDelegacia}
                         class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700 bg-white"
                     >
@@ -411,10 +419,12 @@
                 </div>
                 <div>
                     <label
+                        for="filtro-servidor"
                         class="block text-[10px] font-bold uppercase text-slate-400 mb-1"
                         >Servidor / Responsável</label
                     >
                     <input
+                        id="filtro-servidor"
                         bind:value={filtroServidor}
                         type="text"
                         placeholder="Nome do servidor..."
@@ -423,10 +433,12 @@
                 </div>
                 <div>
                     <label
+                        for="filtro-data-de"
                         class="block text-[10px] font-bold uppercase text-slate-400 mb-1"
                         >Data de entrada — De</label
                     >
                     <input
+                        id="filtro-data-de"
                         bind:value={filtroDataDe}
                         type="date"
                         class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700"
@@ -434,10 +446,12 @@
                 </div>
                 <div>
                     <label
+                        for="filtro-data-ate"
                         class="block text-[10px] font-bold uppercase text-slate-400 mb-1"
                         >Data de entrada — Até</label
                     >
                     <input
+                        id="filtro-data-ate"
                         bind:value={filtroDataAte}
                         type="date"
                         class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700"
