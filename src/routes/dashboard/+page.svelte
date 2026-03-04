@@ -125,6 +125,24 @@
             (s: number, p: PlantaoListItem) => s + (p.q_outros ?? 0),
             0,
         ),
+        procedimentos: TIPOS_PROC.reduce(
+            (acc, tipo) => {
+                acc[tipo] = plantoesVisiveis.reduce(
+                    (s: number, p: PlantaoListItem) => {
+                        if (!p.tipos_procedimento) return s;
+                        return (
+                            s +
+                            p.tipos_procedimento
+                                .split(",")
+                                .filter((t) => t === tipo).length
+                        );
+                    },
+                    0,
+                );
+                return acc;
+            },
+            {} as Record<string, number>,
+        ),
     });
 
     /** Retorna classe CSS do badge de tipo de procedimento */
@@ -145,7 +163,7 @@
                 ? 'justify-center mt-0.5'
                 : 'gap-1 mb-2'}"
         >
-            {#each tipos.split(",") as tipo}
+            {#each Array.from(new Set(tipos.split(","))) as tipo}
                 <span
                     class="{size === 'sm'
                         ? 'text-[8px]'
@@ -209,20 +227,20 @@
     <title>Dashboard — DPI SUL</title>
 </svelte:head>
 
-<div class="min-h-screen bg-slate-100">
+<div class="pb-10">
     <main class="max-w-7xl mx-auto p-4 md:p-6">
         <!-- ── Topo do Painel ── -->
         <div
-            class="flex items-center justify-between mb-6 border-b border-slate-200 pb-4"
+            class="flex items-center justify-between mb-6 border-b border-slate-800 pb-4"
         >
             <div>
                 <h1
-                    class="text-2xl font-black text-slate-800 uppercase tracking-tight"
+                    class="text-2xl font-black text-white uppercase tracking-tight"
                 >
                     Dashboard de Plantões
                 </h1>
                 <p
-                    class="text-slate-500 text-xs mt-0.5 uppercase tracking-widest"
+                    class="text-slate-400 text-xs mt-0.5 uppercase tracking-widest"
                 >
                     Painel de Controle — DPI SUL
                 </p>
@@ -230,16 +248,16 @@
             <a
                 href="/plantao"
                 data-sveltekit-reload
-                class="bg-[#c5a059] text-[#0a192f] text-xs font-black px-4 py-2 rounded-lg hover:brightness-110 transition shadow-sm"
+                class="bg-[#c5a059] text-[#0a192f] text-xs font-black px-4 py-2 rounded-lg hover:brightness-110 flex items-center justify-center transition shadow-sm"
             >
-                + NOVO PLANTÃO
+                + <span class="hidden sm:inline ml-1">NOVO PLANTÃO</span>
             </a>
         </div>
         <!-- ── Cards de estatísticas (sobre registros filtrados) ── -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-5">
-            {#each [{ label: "Exibindo", value: stats.total, cor: "border-l-slate-400", text: "text-slate-700" }, { label: "Finalizados", value: stats.finalizados, cor: "border-l-emerald-500", text: "text-emerald-700" }, { label: "Retificados", value: stats.retificados, cor: "border-l-blue-500", text: "text-blue-700" }, { label: "Rascunhos", value: stats.rascunhos, cor: "border-l-yellow-500", text: "text-yellow-700" }, { label: "Presos", value: stats.presos, cor: "border-l-red-500", text: "text-red-700" }, { label: "Apreensões", value: stats.apreensoes, cor: "border-l-orange-500", text: "text-orange-700" }, { label: "B.O.s", value: stats.bo, cor: "border-l-indigo-500", text: "text-indigo-700" }] as card}
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3 mb-5">
+            {#each [{ label: "Exibindo", value: stats.total, cor: "border-l-slate-400", text: "text-slate-200" }, { label: "Finalizados", value: stats.finalizados, cor: "border-l-emerald-500", text: "text-emerald-400" }, { label: "Retificados", value: stats.retificados, cor: "border-l-blue-500", text: "text-blue-400" }, { label: "Rascunhos", value: stats.rascunhos, cor: "border-l-yellow-500", text: "text-yellow-400" }] as card}
                 <div
-                    class="bg-white rounded-xl border border-slate-200 border-l-4 {card.cor} p-3 shadow-sm"
+                    class="bg-[#112240] rounded-xl border border-slate-700 border-l-4 {card.cor} p-3 shadow-sm"
                 >
                     <span
                         class="text-[10px] font-bold uppercase text-slate-400 block leading-tight"
@@ -254,11 +272,12 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
             <!-- ── Produtividade acumulada (registros filtrados) ── -->
+            <!-- ── Produtividade acumulada (registros filtrados) ── -->
             <div
-                class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
+                class="bg-[#112240] rounded-xl border border-slate-700 p-4 shadow-sm"
             >
                 <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-xs font-bold uppercase text-slate-500">
+                    <h2 class="text-xs font-bold uppercase text-slate-400">
                         Produtividade Acumulada
                         {#if filtrosAtivos > 0}
                             <span class="ml-2 text-[#c5a059] font-black"
@@ -270,14 +289,14 @@
                 <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 text-center">
                     {#each [{ label: "B.O.", value: stats.bo }, { label: "Guias", value: stats.guias }, { label: "Apreensões", value: stats.apreensoes }, { label: "Presos", value: stats.presos }, { label: "Med. Prot.", value: stats.medidas }, { label: "Outros", value: stats.outros }] as q (q.label)}
                         <div
-                            class="bg-slate-50 rounded-lg p-3 border border-slate-100"
+                            class="bg-[#061325] rounded-lg p-3 border border-slate-800"
                         >
                             <p
-                                class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1"
+                                class="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1"
                             >
                                 {q.label}
                             </p>
-                            <p class="text-xl font-black text-slate-700">
+                            <p class="text-xl font-black text-slate-200">
                                 {q.value ?? 0}
                             </p>
                         </div>
@@ -285,33 +304,38 @@
                 </div>
             </div>
 
-            <!-- ── Procedimentos Qualitativos (Global) ── -->
+            <!-- ── Procedimentos Qualitativos (Filtrado/Global) ── -->
             <div
-                class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
+                class="bg-[#112240] rounded-xl border border-slate-700 p-4 shadow-sm"
             >
                 <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-xs font-bold uppercase text-slate-500">
+                    <h2 class="text-xs font-bold uppercase text-slate-400">
                         Procedimentos Registrados
+                        {#if filtrosAtivos > 0}
+                            <span class="ml-2 text-[#c5a059] font-black"
+                                >(filtrado)</span
+                            >
+                        {/if}
                     </h2>
-                    <span
-                        class="text-[10px] font-bold bg-[#0a192f] text-slate-300 px-2 py-0.5 rounded uppercase"
-                        >Global</span
-                    >
+                    {#if filtrosAtivos === 0}
+                        <span
+                            class="text-[10px] font-bold bg-[#c5a059]/20 text-[#c5a059] px-2 py-0.5 rounded uppercase border border-[#c5a059]/30"
+                            >Global</span
+                        >
+                    {/if}
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                     {#each TIPOS_PROC as tipo}
                         <div
-                            class="bg-slate-50 rounded-lg p-3 border border-slate-100"
+                            class="bg-[#061325] rounded-lg p-3 border border-slate-800"
                         >
                             <p
-                                class="text-[9px] font-bold text-slate-400 uppercase leading-none mb-1"
+                                class="text-[9px] font-bold text-slate-500 uppercase leading-none mb-1"
                             >
                                 {tipo}
                             </p>
-                            <p class="text-xl font-black text-slate-700">
-                                {(data as any).qualitativos?.find(
-                                    (q: any) => q.tipo === tipo,
-                                )?.quantidade ?? 0}
+                            <p class="text-xl font-black text-slate-200">
+                                {stats.procedimentos[tipo]}
                             </p>
                         </div>
                     {/each}
@@ -321,11 +345,11 @@
 
         <!-- ── Painel de filtros ── -->
         <div
-            class="bg-white rounded-xl border border-slate-200 shadow-sm mb-4 p-4"
+            class="bg-[#112240] rounded-xl border border-slate-700 shadow-sm mb-4 p-4"
         >
             <div class="flex items-center justify-between mb-3">
                 <h2
-                    class="text-xs font-bold uppercase text-slate-500 flex items-center gap-2"
+                    class="text-xs font-bold uppercase text-[#c5a059] flex items-center gap-2"
                 >
                     Filtros
                     {#if filtrosAtivos > 0}
@@ -340,7 +364,7 @@
                     <button
                         type="button"
                         onclick={limparFiltros}
-                        class="text-xs text-slate-400 hover:text-red-500 font-bold transition flex items-center gap-1"
+                        class="text-xs text-slate-400 hover:text-red-400 font-bold transition flex items-center gap-1"
                     >
                         ✕ Limpar filtros
                     </button>
@@ -360,7 +384,7 @@
                         bind:value={busca}
                         type="text"
                         placeholder="Protocolo, unidade ou responsável..."
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700"
+                        class="w-full bg-[#061325] border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-200 placeholder:text-slate-500"
                     />
                 </div>
                 <div>
@@ -372,7 +396,7 @@
                     <select
                         id="filtro-status"
                         bind:value={filtroStatus}
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700 bg-white"
+                        class="w-full bg-[#061325] border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-200"
                     >
                         <option value="">Todos</option>
                         <option value="finalizado">Finalizado</option>
@@ -389,7 +413,7 @@
                     <select
                         id="filtro-tipo-proc"
                         bind:value={filtroTipoProc}
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700 bg-white"
+                        class="w-full bg-[#061325] border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-200"
                     >
                         <option value="">Todos</option>
                         {#each TIPOS_PROC as tipo}
@@ -410,7 +434,7 @@
                     <select
                         id="filtro-delegacia"
                         bind:value={filtroDelegacia}
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700 bg-white"
+                        class="w-full bg-[#061325] border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-200"
                     >
                         <option value="">Todas</option>
                         {#each data.delegacias as d}
@@ -429,7 +453,7 @@
                         bind:value={filtroServidor}
                         type="text"
                         placeholder="Nome do servidor..."
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700"
+                        class="w-full bg-[#061325] border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-200 placeholder:text-slate-500"
                     />
                 </div>
                 <div>
@@ -442,7 +466,7 @@
                         id="filtro-data-de"
                         bind:value={filtroDataDe}
                         type="date"
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700"
+                        class="w-full bg-[#061325] border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-200"
                     />
                 </div>
                 <div>
@@ -455,7 +479,7 @@
                         id="filtro-data-ate"
                         bind:value={filtroDataAte}
                         type="date"
-                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-700"
+                        class="w-full bg-[#061325] border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c5a059] text-slate-200"
                     />
                 </div>
             </div>
@@ -463,15 +487,15 @@
 
         <!-- ── Tabela de plantões ── -->
         <div
-            class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
+            class="bg-[#112240] rounded-xl border border-slate-700 shadow-sm overflow-hidden"
         >
             <div
-                class="px-4 py-3 border-b border-slate-100 flex items-center justify-between"
+                class="px-4 py-3 border-b border-slate-700 flex items-center justify-between"
             >
-                <span class="text-xs font-bold text-slate-500 uppercase">
+                <span class="text-xs font-bold text-slate-400 uppercase">
                     {plantoesVisiveis.length} registro(s)
                     {#if filtrosAtivos > 0}
-                        <span class="text-slate-400 font-normal"
+                        <span class="text-slate-500 font-normal"
                             >de {data.plantoes.length} total</span
                         >
                     {/if}
@@ -487,7 +511,7 @@
             {#if plantoesVisiveis.length === 0}
                 <div class="text-center py-16 text-slate-400">
                     <p class="text-4xl mb-3">🔍</p>
-                    <p class="font-medium text-sm">
+                    <p class="font-medium text-sm text-slate-300">
                         Nenhum plantão encontrado para os filtros selecionados.
                     </p>
                     <button
@@ -503,7 +527,7 @@
                 <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead
-                            class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200"
+                            class="bg-[#061325] text-xs uppercase text-slate-400 border-b border-slate-700"
                         >
                             <tr>
                                 <th class="px-4 py-3 text-left font-bold"
@@ -532,11 +556,13 @@
                                 >
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <tbody class="divide-y divide-slate-700">
                             {#each plantoesVisiveis as p}
-                                <tr class="hover:bg-slate-50 transition-colors">
+                                <tr
+                                    class="hover:bg-slate-800/50 transition-colors"
+                                >
                                     <td
-                                        class="px-4 py-3 font-mono font-bold text-slate-700 text-xs"
+                                        class="px-4 py-3 font-mono font-bold text-slate-200 text-xs"
                                     >
                                         {formatarProtocolo(p.protocolo, p.id)}
                                         {#if p.status === "retificado"}
@@ -547,34 +573,34 @@
                                         {/if}
                                     </td>
                                     <td
-                                        class="px-4 py-3 font-medium uppercase text-slate-800 text-xs max-w-[160px] truncate"
+                                        class="px-4 py-3 font-medium uppercase text-slate-300 text-xs max-w-[160px] truncate"
                                         title={p.delegacia}>{p.delegacia}</td
                                     >
                                     <td
-                                        class="px-4 py-3 text-slate-600 text-xs uppercase max-w-[140px] truncate"
+                                        class="px-4 py-3 text-slate-400 text-xs uppercase max-w-[140px] truncate"
                                         title={p.nome_responsavel ?? ""}
                                         >{p.nome_responsavel ?? "—"}</td
                                     >
                                     <td
-                                        class="px-4 py-3 text-center text-slate-600 text-xs whitespace-nowrap"
+                                        class="px-4 py-3 text-center text-slate-400 text-xs whitespace-nowrap"
                                     >
                                         {formatarData(p.data_entrada)}
                                         {#if p.hora_entrada}
                                             <span
-                                                class="text-slate-400 text-[10px]"
+                                                class="text-slate-500 text-[10px]"
                                             >
                                                 {p.hora_entrada}</span
                                             >
                                         {/if}
                                     </td>
                                     <td
-                                        class="px-4 py-3 text-center font-bold text-slate-700"
+                                        class="px-4 py-3 text-center font-bold text-slate-200"
                                         >{p.total_equipe ?? 0}</td
                                     >
                                     <td class="px-4 py-3 text-center">
                                         {#if (p.total_procedimentos ?? 0) > 0}
                                             <span
-                                                class="font-bold text-slate-700"
+                                                class="font-bold text-slate-200"
                                                 >{p.total_procedimentos}</span
                                             >
                                             {@render tipoBadges(
@@ -582,7 +608,7 @@
                                                 "sm",
                                             )}
                                         {:else}
-                                            <span class="text-slate-300">—</span
+                                            <span class="text-slate-600">—</span
                                             >
                                         {/if}
                                     </td>
@@ -605,13 +631,13 @@
                 </div>
 
                 <!-- Cards mobile -->
-                <div class="md:hidden divide-y divide-slate-100">
+                <div class="md:hidden divide-y divide-slate-700">
                     {#each plantoesVisiveis as p}
                         <div class="p-4">
                             <div class="flex items-start justify-between mb-2">
                                 <div>
                                     <p
-                                        class="font-mono font-black text-slate-700 text-sm"
+                                        class="font-mono font-black text-slate-200 text-sm"
                                     >
                                         {formatarProtocolo(p.protocolo, p.id)}
                                         {#if p.status === "retificado"}
@@ -622,12 +648,12 @@
                                         {/if}
                                     </p>
                                     <p
-                                        class="text-xs font-bold uppercase text-slate-800"
+                                        class="text-xs font-bold uppercase text-slate-300"
                                     >
                                         {p.delegacia}
                                     </p>
                                     <p
-                                        class="text-[10px] text-slate-500 uppercase"
+                                        class="text-[10px] text-slate-400 uppercase"
                                     >
                                         {p.nome_responsavel ?? ""}
                                     </p>
@@ -640,7 +666,7 @@
                                     {statusLabel(p.status)}
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500 mb-1">
+                            <p class="text-xs text-slate-400 mb-1">
                                 {formatarData(p.data_entrada)}
                                 {p.hora_entrada ?? ""}
                                 {p.data_saida
@@ -662,7 +688,7 @@
                     type="button"
                     onclick={() => irParaPagina(pag.pagina - 1)}
                     disabled={pag.pagina <= 1}
-                    class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                    class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-700 text-slate-400 hover:bg-slate-800/50 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                     Anterior
                 </button>
@@ -673,7 +699,7 @@
                         class="px-3 py-1.5 text-xs font-bold rounded-lg transition {p ===
                         pag.pagina
                             ? 'bg-[#c5a059] text-[#0a192f]'
-                            : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}"
+                            : 'border border-slate-700 text-slate-400 hover:bg-slate-800/50 hover:text-white'}"
                     >
                         {p}
                     </button>
@@ -682,12 +708,12 @@
                     type="button"
                     onclick={() => irParaPagina(pag.pagina + 1)}
                     disabled={pag.pagina >= pag.totalPaginas}
-                    class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                    class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-700 text-slate-400 hover:bg-slate-800/50 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                    Proxima
+                    Próxima
                 </button>
-                <span class="text-xs text-slate-400 ml-2">
-                    {pag.totalRegistros} registro(s)
+                <span class="text-xs text-slate-500 ml-2">
+                    Total: {data.plantoes.length} registros
                 </span>
             </div>
         {/if}

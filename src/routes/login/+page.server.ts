@@ -10,7 +10,9 @@ function gerarSessionId(): string {
 export const load: PageServerLoad = async ({ locals, url }) => {
     // Se já estiver logado, redireciona
     if (locals.usuario) {
-        throw redirect(302, url.searchParams.get('redirect') || '/plantao');
+        const isAdmin = ['00000000', '12312312', '12345678'].includes(locals.usuario.matricula);
+        const redirectPath = isAdmin ? '/dashboard' : '/plantao';
+        throw redirect(302, url.searchParams.get('redirect') || redirectPath);
     }
     return { etapa: 'matricula' };
 };
@@ -168,7 +170,9 @@ export const actions: Actions = {
                 maxAge: 8 * 60 * 60 // 8 horas em segundos
             });
 
-            const redirecionarPara = url.searchParams.get('redirect') || '/plantao';
+            const isAdmin = ['00000000', '12312312', '12345678'].includes(servidor.matricula);
+            const redirectPath = isAdmin ? '/dashboard' : '/plantao';
+            const redirecionarPara = url.searchParams.get('redirect') || redirectPath;
             throw redirect(303, redirecionarPara);
         } catch (err) {
             if (isRedirect(err)) throw err;

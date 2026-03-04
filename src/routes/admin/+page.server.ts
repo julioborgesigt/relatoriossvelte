@@ -7,6 +7,18 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 
     if (!db) return vazio;
 
+    const isAdmin = ['00000000', '12312312', '12345678'].includes(locals.usuario?.matricula || '');
+    if (!isAdmin) {
+        return {
+            delegaciasAdmin: [],
+            servidoresAdmin: [],
+            usuario: locals.usuario,
+            pageTitle: 'Acesso Negado',
+            pageHeading: 'Ops...',
+            pageSubheading: 'Você não tem permissão para acessar a administração.'
+        };
+    }
+
     try {
         const [delegaciasAdmin, servidoresAdmin] = await Promise.all([
             db.prepare(`SELECT id, nome, status, data_expiracao FROM delegacias ORDER BY nome`).all(),
@@ -33,6 +45,9 @@ export const actions: Actions = {
         if (!db) return fail(500, { erro: 'Banco de dados não configurado.' });
         const usuario = locals.usuario;
         if (!usuario) return fail(401, { erro: 'Sessão expirada. Faça login novamente.' });
+
+        const isAdmin = ['00000000', '12312312', '12345678'].includes(usuario.matricula);
+        if (!isAdmin) return fail(403, { erro: 'Sem permissão para esta ação.' });
 
         const formData = await request.formData();
         const acao = formData.get('acao')?.toString();

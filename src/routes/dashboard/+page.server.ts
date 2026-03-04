@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import type { PlantaoListItem } from '$lib/types';
 
-const POR_PAGINA = 30;
+const POR_PAGINA = 10;
 
 export const load: PageServerLoad = async ({ platform, url }) => {
     const db = platform?.env.remocoespcce;
@@ -26,14 +26,11 @@ export const load: PageServerLoad = async ({ platform, url }) => {
                        p.data_saida, p.hora_saida, p.status, p.nome_responsavel,
                        p.q_bo, p.q_guias, p.q_apreensoes, p.q_presos, p.q_medidas, p.q_outros,
                        p.criado_em,
-                       COUNT(DISTINCT e.id) as total_equipe,
-                       COUNT(DISTINCT pr.id) as total_procedimentos,
-                       GROUP_CONCAT(DISTINCT e.nome_servidor) as servidores_equipe,
-                       GROUP_CONCAT(DISTINCT pr.tipo) as tipos_procedimento
+                       (SELECT COUNT(*) FROM plantoes_equipe WHERE plantao_id = p.id) as total_equipe,
+                       (SELECT COUNT(*) FROM plantoes_procedimentos WHERE plantao_id = p.id) as total_procedimentos,
+                       (SELECT GROUP_CONCAT(nome_servidor) FROM plantoes_equipe WHERE plantao_id = p.id) as servidores_equipe,
+                       (SELECT GROUP_CONCAT(tipo) FROM plantoes_procedimentos WHERE plantao_id = p.id) as tipos_procedimento
                 FROM plantoes p
-                LEFT JOIN plantoes_equipe e ON e.plantao_id = p.id
-                LEFT JOIN plantoes_procedimentos pr ON pr.plantao_id = p.id
-                GROUP BY p.id
                 ORDER BY p.criado_em DESC
                 LIMIT ? OFFSET ?
             `).bind(POR_PAGINA, offset).all<PlantaoListItem>(),

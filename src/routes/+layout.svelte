@@ -49,7 +49,7 @@
                 >
                     Plantao
                 </a>
-                {#if data.usuario?.matricula === "00000000"}
+                {#if ["00000000", "12312312", "12345678"].includes(data.usuario?.matricula || "")}
                     <a
                         href="/dashboard"
                         class="px-3 py-1.5 rounded-lg transition font-bold {data.pathname ===
@@ -58,6 +58,15 @@
                             : 'text-slate-400 hover:text-white hover:bg-white/10'}"
                     >
                         Dashboard
+                    </a>
+                    <a
+                        href="/admin"
+                        class="px-3 py-1.5 rounded-lg transition font-bold {data.pathname ===
+                        '/admin'
+                            ? 'bg-[#c5a059] text-[#0a192f]'
+                            : 'text-slate-400 hover:text-white hover:bg-white/10'}"
+                    >
+                        Admin
                     </a>
                 {/if}
             </div>
@@ -94,4 +103,8 @@
     </nav>
 {/if}
 
-{@render children()}
+<div
+    class="bg-[#0a192f] min-h-screen font-sans text-slate-200 antialiased selection:bg-[#c5a059] selection:text-[#0a192f] flex flex-col"
+>
+    {@render children()}
+</div>
