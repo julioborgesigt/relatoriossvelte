@@ -29,9 +29,26 @@
                 type="text"
                 list="lista-delegacias"
                 bind:value={state.delegacia}
+                onchange={() => {
+                    if (state.delegacia.trim() !== "") {
+                        const existe = delegacias.find(
+                            (d: any) =>
+                                d.nome.toLowerCase() ===
+                                state.delegacia.toLowerCase(),
+                        );
+                        if (existe) {
+                            state.delegacia = existe.nome;
+                        } else {
+                            state.delegacia = "";
+                            alert(
+                                "Unidade policial não encontrada na base de dados. Selecione uma opção válida.",
+                            );
+                        }
+                    }
+                }}
                 placeholder="Digite ou selecione a delegacia..."
                 required
-                class="w-full bg-white/90 text-slate-900 p-3 rounded-lg font-medium focus:ring-2 focus:ring-[#c5a059] outline-none uppercase"
+                class="w-full bg-white/90 text-slate-900 p-2.5 rounded-lg text-sm font-medium focus:ring-2 focus:ring-[#c5a059] outline-none uppercase"
             />
             <datalist id="lista-delegacias">
                 {#each delegacias as d}

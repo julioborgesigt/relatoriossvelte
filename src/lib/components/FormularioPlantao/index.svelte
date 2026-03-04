@@ -6,6 +6,8 @@
     import SecaoProcedimentos from "./SecaoProcedimentos.svelte";
     import { PlantaoFormState, setPlantaoForm } from "./state.svelte";
 
+    import { superForm } from "sveltekit-superforms";
+
     let {
         isRetificacao = false,
         actionUrl = "?/salvar",
@@ -16,12 +18,17 @@
         delegacias = [] as any[],
         formResult = null as any,
         usuario = null as any,
+        superform = null as any,
     } = $props();
 
     const state = new PlantaoFormState(
+        // svelte-ignore state_referenced_locally
         isRetificacao,
+        // svelte-ignore state_referenced_locally
         dadosIniciais,
+        // svelte-ignore state_referenced_locally
         equipeInicial,
+        // svelte-ignore state_referenced_locally
         procedimentosIniciais,
     );
 
@@ -29,6 +36,18 @@
         // Re-sincroniza o estado e notificações baseados no resultado da finalização
         state.handleFormResult(formResult);
     });
+
+    // svelte-ignore state_referenced_locally
+    const formOpts = superform
+        ? // svelte-ignore state_referenced_locally
+          superForm(superform, {
+              taintedMessage: null,
+          })
+        : null;
+
+    // Se optarmos por usar o store do superform depois, podemos extrair aqui.
+    // Por hora, o superValidate trata apenas de validação do lado do servidor se a página falhar,
+    // mas já estamos integrando a tipagem pra futuras melhorias.
 
     // Prover contexto para os sub componentes
     setPlantaoForm(state);
@@ -43,11 +62,11 @@
 />
 
 <!-- Toast de sucesso -->
-{#if formResult && "sucesso" in formResult && formResult.sucesso}
+{#if state.mostrarToast && state.mensagemToast}
     <div
-        class="fixed top-5 right-5 z-50 bg-emerald-900 border border-emerald-500 text-emerald-200 px-5 py-3 rounded-xl shadow-2xl font-bold text-sm"
+        class="fixed top-5 right-5 z-50 bg-emerald-900 border border-emerald-500 text-emerald-200 px-5 py-3 rounded-xl shadow-2xl font-bold text-sm animate-fade-in-down"
     >
-        ✓ {formResult.mensagem}
+        ✓ {state.mensagemToast}
     </div>
 {/if}
 
@@ -153,10 +172,14 @@
                 class="space-y-4"
                 use:enhance={() => {
                     state.carregando = true;
-                    return async ({ update }) => {
-                        state.carregando = false;
-                        state.mostrarModalRascunho = false;
-                        await update();
+                    return async ({ result, update }) => {
+                        if (result.type === "redirect") {
+                            window.location.href = result.location;
+                        } else {
+                            state.carregando = false;
+                            state.mostrarModalRascunho = false;
+                            await update();
+                        }
                     };
                 }}
             >
@@ -378,8 +401,34 @@
         <form
             method="POST"
             action={actionUrl}
-            use:enhance={() => {
+            use:enhance={({ formData, submitter }) => {
                 state.carregando = true;
+
+                const acao =
+                    submitter?.getAttribute("value") ||
+                    (isRetificacao ? "finalizar" : "rascunho");
+
+                const objParaEnviar = {
+                    draft_id: state.relatorioId,
+                    acao: acao,
+                    delegacia: state.delegacia,
+                    data_entrada: state.data_entrada,
+                    hora_entrada: state.hora_entrada,
+                    data_saida: state.data_saida,
+                    hora_saida: state.hora_saida,
+                    observacoes: state.observacoes,
+                    q_bo: state.q_bo,
+                    q_guias: state.q_guias,
+                    q_apreensoes: state.q_apreensoes,
+                    q_presos: state.q_presos,
+                    q_medidas: state.q_medidas,
+                    q_outros: state.q_outros,
+                    equipe: state.equipe,
+                    procedimentos: state.procedimentos,
+                };
+
+                formData.set("__superform_json", JSON.stringify(objParaEnviar));
+
                 return async ({ result, update }) => {
                     state.carregando = false;
                     if (isRetificacao) {
@@ -406,38 +455,46 @@
             }}
             oninput={() => state.marcarDirty()}
         >
-            {#if !isRetificacao && dadosIniciais?.id}
-                <input type="hidden" name="draft_id" value={dadosIniciais.id} />
+            {#if !isRetificacao && state.relatorioId}
+                <input
+                    type="hidden"
+                    name="draft_id"
+                    value={state.relatorioId}
+                />
             {/if}
 
-            <SecaoCabecalho {delegacias} />
-            <hr class="border-[#c5a059]/20 my-6" />
-            <SecaoEquipe {servidores} />
-            <hr class="border-[#c5a059]/20 my-6" />
-            <SecaoEstatisticas />
-            <hr class="border-[#c5a059]/20 my-6" />
-            <SecaoProcedimentos />
-            <hr class="border-[#c5a059]/20 my-6" />
+            <div
+                class="border border-[#c5a059]/30 rounded-2xl p-4 md:p-6 bg-black/10 shadow-xl mb-6"
+            >
+                <SecaoCabecalho {delegacias} />
+                <hr class="border-[#c5a059]/10 my-6" />
+                <SecaoEquipe {servidores} />
+                <hr class="border-[#c5a059]/10 my-6" />
+                <SecaoEstatisticas />
+                <hr class="border-[#c5a059]/10 my-6" />
+                <SecaoProcedimentos />
+                <hr class="border-[#c5a059]/10 my-6" />
 
-            <!-- Seção 5: Observações -->
-            <section class="mb-8">
-                <h2
-                    class="text-[#c5a059] text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
-                >
-                    <span
-                        class="bg-[#c5a059] text-[#0a192f] px-2 py-0.5 rounded text-[10px]"
-                        >5</span
+                <!-- Seção 5: Observações -->
+                <section>
+                    <h2
+                        class="text-[#c5a059] text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
                     >
-                    Observações Gerais
-                </h2>
-                <textarea
-                    name="observacoes"
-                    bind:value={state.observacoes}
-                    rows="4"
-                    placeholder="Registre aqui quaisquer observações relevantes sobre o plantão..."
-                    class="w-full bg-black/20 border border-slate-700 text-white placeholder-slate-600 p-3 rounded-xl outline-none resize-y text-sm focus:ring-2 focus:ring-[#c5a059] uppercase"
-                ></textarea>
-            </section>
+                        <span
+                            class="bg-[#c5a059] text-[#0a192f] px-2 py-0.5 rounded text-[10px]"
+                            >5</span
+                        >
+                        Observações Gerais
+                    </h2>
+                    <textarea
+                        name="observacoes"
+                        bind:value={state.observacoes}
+                        rows="4"
+                        placeholder="Registre aqui quaisquer observações relevantes sobre o plantão..."
+                        class="w-full bg-black/20 border border-slate-700 text-white placeholder-slate-600 p-3 rounded-xl outline-none resize-y text-sm focus:ring-2 focus:ring-[#c5a059] uppercase"
+                    ></textarea>
+                </section>
+            </div>
 
             <!-- Barra de ações unificada -->
             <div class="pt-6 border-t border-[#c5a059]/30">
@@ -567,17 +624,25 @@
                     {/if}
                 </div>
 
-                {#if state.relatorioFinalizado}
+                {#if state.protocoloGerado}
                     <p
                         class="text-center mt-3 font-mono text-emerald-400 font-black text-sm tracking-widest"
                     >
-                        ✅ {state.protocoloGerado}
-                        {isRetificacao ? "— Retificação finalizada" : ""}
-                        <a
-                            href="/plantao"
-                            class="ml-4 text-[10px] border border-slate-600 text-slate-400 px-3 py-1 rounded-lg hover:bg-slate-800 transition font-sans font-bold uppercase"
-                            >+ Novo{isRetificacao ? " Relatório" : ""}</a
-                        >
+                        {state.relatorioFinalizado ? "✅" : "📝"}
+                        {state.protocoloGerado}
+                        {isRetificacao
+                            ? "— Retificação finalizada"
+                            : state.relatorioFinalizado
+                              ? "— Finalizado"
+                              : "— Rascunho salvo"}
+                        {#if state.relatorioFinalizado}
+                            <a
+                                href="/plantao"
+                                data-sveltekit-reload
+                                class="ml-4 text-[10px] border border-slate-600 text-slate-400 px-3 py-1 rounded-lg hover:bg-slate-800 transition font-sans font-bold uppercase"
+                                >+ Novo{isRetificacao ? " Relatório" : ""}</a
+                            >
+                        {/if}
                     </p>
                 {:else if state.temErrosHorario && !isRetificacao}
                     <p

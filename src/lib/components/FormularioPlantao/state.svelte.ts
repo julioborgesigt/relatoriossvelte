@@ -67,23 +67,21 @@ export class PlantaoFormState {
     nomeDiretorExtra = $state("");
     membrosExtraIncluidos = $state<string[]>([]);
 
+    // Toast de Sucesso
+    mostrarToast = $state(false);
+    mensagemToast = $state("");
+    toastTimeout: ReturnType<typeof setTimeout> | null = null;
+
     private membroIdCounter = 0;
     private procIdCounter = 0;
     private envolvidoCounter = 0;
 
     constructor(
-        isRetificacao: boolean,
-        dadosIniciais: any,
-        equipeInicial: any[],
-        procedimentosIniciais: any[]
+        isRetificacao: boolean = false,
+        dadosIniciais: Record<string, any> = {},
+        equipeInicial: any[] = [],
+        procedimentosIniciais: any[] = []
     ) {
-        const hoje = new Date();
-        const amanha = new Date();
-        amanha.setDate(hoje.getDate() + 1);
-
-        this.data_entrada = getLocalYYYYMMDD(hoje);
-        this.data_saida = getLocalYYYYMMDD(amanha);
-
         this.init(isRetificacao, dadosIniciais, equipeInicial, procedimentosIniciais);
 
         // Sempre forçar no mínimo 1 membro inicial se for criação
@@ -131,10 +129,16 @@ export class PlantaoFormState {
 
         if (procIniciais && procIniciais.length > 0) {
             this.procedimentos = procIniciais.map((p: any) => {
-                const vitimas = (p.vitimas as string[]).map((texto: string) => ({ id: ++this.envolvidoCounter, texto }));
+                const vitimas = (p.vitimas || []).map((v: any) => ({
+                    id: ++this.envolvidoCounter,
+                    texto: typeof v === 'string' ? v : (v.texto ?? "")
+                }));
                 if (vitimas.length === 0) vitimas.push({ id: ++this.envolvidoCounter, texto: "" });
 
-                const suspeitos = (p.suspeitos as string[]).map((texto: string) => ({ id: ++this.envolvidoCounter, texto }));
+                const suspeitos = (p.suspeitos || []).map((v: any) => ({
+                    id: ++this.envolvidoCounter,
+                    texto: typeof v === 'string' ? v : (v.texto ?? "")
+                }));
                 if (suspeitos.length === 0) suspeitos.push({ id: ++this.envolvidoCounter, texto: "" });
 
                 return {
@@ -233,6 +237,15 @@ export class PlantaoFormState {
                 membro.cargo = encontrado.cargo || "";
                 membro.lotacao = encontrado.lotacao || "";
             }
+        } else if (nome.trim() !== "") {
+            const membro = this.equipe.find((m) => m.id === membroId);
+            if (membro) {
+                membro.nome = "";
+                membro.matricula = "";
+                membro.cargo = "";
+                membro.lotacao = "";
+                alert("Servidor não encontrado na base de dados. Selecione uma opção válida.");
+            }
         }
         this.marcarDirty();
     }
@@ -303,12 +316,27 @@ export class PlantaoFormState {
         if (!formResult) return;
         if ("sucesso" in formResult && formResult.sucesso) {
             this.isDirty = false;
+
+            // Exibir Toast
+            this.mostrarToast = true;
+            this.mensagemToast = formResult.mensagem;
+            if (this.toastTimeout) clearTimeout(this.toastTimeout);
+            this.toastTimeout = setTimeout(() => {
+                this.mostrarToast = false;
+            }, 3500);
+
+            if (formResult.id) {
+                this.relatorioId = formResult.id;
+            }
         }
         if ("acao" in formResult && formResult.acao === "finalizado") {
             this.relatorioFinalizado = true;
             this.protocoloGerado = formResult.protocolo ?? "";
             this.relatorioId = formResult.id ?? 0;
             this.isDirty = false;
+        } else if ("acao" in formResult && formResult.acao === "rascunho") {
+            this.protocoloGerado = formResult.protocolo ?? "";
+            this.relatorioFinalizado = false;
         }
     }
 

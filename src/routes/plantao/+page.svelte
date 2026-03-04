@@ -9,6 +9,7 @@
     isRetificacao={false}
     actionUrl="?/salvar"
     formResult={form}
+    superform={data.form}
     dadosIniciais={data.rascunhoCarregado?.dados ?? {}}
     equipeInicial={data.rascunhoCarregado?.equipe ?? []}
     procedimentosIniciais={data.rascunhoCarregado?.procedimentos ?? []}

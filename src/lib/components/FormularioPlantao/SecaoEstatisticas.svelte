@@ -29,7 +29,7 @@
                     name={item.name}
                     min="0"
                     bind:value={state[item.bind as keyof typeof state]}
-                    class="w-full text-center bg-white/90 text-slate-900 p-2 rounded-lg font-bold outline-none text-lg focus:ring-2 focus:ring-[#c5a059]"
+                    class="w-full text-center bg-white/90 text-slate-900 p-1.5 rounded-lg font-bold outline-none text-base focus:ring-2 focus:ring-[#c5a059]"
                 />
             </div>
         {/each}

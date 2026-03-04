@@ -41,6 +41,7 @@
             <div class="flex gap-1">
                 <a
                     href="/plantao"
+                    data-sveltekit-reload
                     class="px-3 py-1.5 rounded-lg transition font-bold {data.pathname ===
                     '/plantao'
                         ? 'bg-[#c5a059] text-[#0a192f]'
@@ -61,15 +62,33 @@
                 {/if}
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <span class="text-slate-500 font-mono hidden sm:block"
+        <div class="flex items-center gap-3 md:gap-4">
+            <span
+                class="text-slate-400/80 font-mono hidden sm:block text-[11px] uppercase tracking-wider"
                 >{data.usuario?.nome}</span
             >
+            <div class="h-4 w-[1px] bg-slate-700 hidden sm:block"></div>
             <a
                 href="/logout"
-                class="text-red-400 hover:text-red-300 font-bold transition"
+                class="flex items-center gap-2 text-red-400 hover:text-[#0a192f] hover:bg-red-500 font-bold border border-red-500/30 px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                title="Sair do sistema"
             >
-                Sair
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span class="hidden sm:inline">SAIR</span>
             </a>
         </div>
     </nav>

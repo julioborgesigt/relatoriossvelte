@@ -84,7 +84,11 @@
                     </button>
                 </div>
 
-                <input type="hidden" name="proc_{idx}_tipo" value={proc.tipo} />
+                <input
+                    type="hidden"
+                    name="procedimentos[{idx}].tipo"
+                    value={proc.tipo}
+                />
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                     <div>
@@ -96,7 +100,7 @@
                         <input
                             id="proc_{idx}_numero"
                             type="text"
-                            name="proc_{idx}_numero"
+                            name="procedimentos[{idx}].numero"
                             bind:value={proc.numero}
                             placeholder="000-00000/0000"
                             maxlength="14"
@@ -113,7 +117,7 @@
                         <input
                             id="proc_{idx}_natureza"
                             type="text"
-                            name="proc_{idx}_natureza"
+                            name="procedimentos[{idx}].natureza"
                             bind:value={proc.natureza}
                             placeholder="Ex: Tráfico de Entorpecentes"
                             required
@@ -138,7 +142,7 @@
                                 <input
                                     id="vitima_{idx}_{vi}_texto"
                                     type="text"
-                                    name="proc_{idx}_vitima_{vi}"
+                                    name="procedimentos[{idx}].vitimas[{vi}].texto"
                                     bind:value={vitima.texto}
                                     placeholder="Nome ou 'A APURAR'"
                                     class="flex-1 w-full bg-black/30 border border-current/30 text-white p-2 rounded-lg text-sm outline-none focus:ring-1 focus:ring-current uppercase"
@@ -180,7 +184,7 @@
                                 <input
                                     id="suspeito_{idx}_{si}_texto"
                                     type="text"
-                                    name="proc_{idx}_suspeito_{si}"
+                                    name="procedimentos[{idx}].suspeitos[{si}].texto"
                                     bind:value={suspeito.texto}
                                     placeholder="Nome ou 'A APURAR'"
                                     class="flex-1 w-full bg-black/30 border border-current/30 text-white p-2 rounded-lg text-sm outline-none focus:ring-1 focus:ring-current uppercase"

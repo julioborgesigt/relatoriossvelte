@@ -9,6 +9,7 @@
     isRetificacao={true}
     actionUrl="?/finalizar"
     formResult={form}
+    superform={data.form}
     dadosIniciais={data.original}
     equipeInicial={data.equipeOriginal}
     procedimentosIniciais={data.procedimentosOriginal}

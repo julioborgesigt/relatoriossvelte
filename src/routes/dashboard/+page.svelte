@@ -229,6 +229,7 @@
             </div>
             <a
                 href="/plantao"
+                data-sveltekit-reload
                 class="bg-[#c5a059] text-[#0a192f] text-xs font-black px-4 py-2 rounded-lg hover:brightness-110 transition shadow-sm"
             >
                 + NOVO PLANTÃO

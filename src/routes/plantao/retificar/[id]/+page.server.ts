@@ -1,14 +1,20 @@
 import { fail, error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { parseFormularioPlantao, validarHorarios, criarBatchEquipeProcedimentos } from '$lib/server/parseFormData';
+import { criarBatchEquipeProcedimentos } from '$lib/server/parseFormData';
 import { getDb } from '$lib/server/db';
 import { buscarPlantao, buscarEquipe, buscarProcedimentos, buscarDelegacias, buscarServidores } from '$lib/server/plantaoQueries';
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+import { PlantaoSchema } from '$lib/schemas/plantao';
 
 export const load: PageServerLoad = async ({ params, platform, locals }) => {
     if (!locals.usuario) throw redirect(302, '/login');
 
     const db = getDb(platform);
     const id = parseInt(params.id);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const form = await superValidate(zod4(PlantaoSchema as any));
 
     const [plantao, equipeOriginal, procedimentosOriginal, delegacias, servidores] = await Promise.all([
         buscarPlantao(db, id),
@@ -22,6 +28,7 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
         throw error(400, 'Apenas relatórios finalizados podem ser retificados.');
 
     return {
+        form,
         original: plantao,
         equipeOriginal,
         procedimentosOriginal,
@@ -38,16 +45,15 @@ export const actions: Actions = {
         if (!usuario) return fail(401, { erro: 'Sessão expirada. Faça login novamente.' });
 
         const originalId = parseInt(params.id);
-        const formData = await request.formData();
-        const dados = parseFormularioPlantao(formData);
 
-        if (!dados.delegacia || !dados.data_entrada || !dados.hora_entrada) {
-            return fail(400, { erro: 'Preencha a unidade policial e os horários de entrada.' });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const form = await superValidate(request, zod4(PlantaoSchema as any));
+
+        if (!form.valid) {
+            return fail(400, { form, erro: 'Existem erros no preenchimento do formulário.' });
         }
 
-        const erroHorario = validarHorarios(dados);
-        if (erroHorario) return fail(400, { erro: erroHorario });
-
+        const dados = form.data as import('$lib/schemas/plantao').PlantaoSchemaType;
         const agora = new Date().toISOString();
 
         try {
@@ -66,10 +72,10 @@ export const actions: Actions = {
 
             await db.batch(batch);
 
-            return { sucesso: true, acao: 'finalizado', protocolo: atual.protocolo, id: originalId };
+            return { form, sucesso: true, acao: 'finalizado', protocolo: atual.protocolo, id: originalId };
         } catch (err) {
             console.error('Erro ao salvar retificação:', err);
-            return fail(500, { erro: 'Erro ao salvar os dados. Tente novamente.' });
+            return fail(500, { form, erro: 'Erro ao salvar os dados. Tente novamente.' });
         }
     }
 };

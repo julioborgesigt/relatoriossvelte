@@ -41,7 +41,7 @@
                         >
                         <input
                             id="equipe_{idx}_nome"
-                            name="equipe_{idx}_nome"
+                            name="equipe[{idx}].nome"
                             type="text"
                             list="lista-servidores"
                             bind:value={membro.nome}
@@ -68,7 +68,7 @@
                         </span>
                         <div class="flex items-center gap-1.5">
                             <select
-                                name="equipe_{idx}_escala"
+                                name="equipe[{idx}].escala"
                                 bind:value={membro.escala}
                                 required
                                 class="bg-slate-800 border border-slate-700 text-slate-300 text-xs p-2 rounded-lg outline-none max-w-[120px] {membro.escala ===
@@ -108,7 +108,7 @@
                         <input
                             id="equipe_{idx}_cargo"
                             type="text"
-                            name="equipe_{idx}_cargo"
+                            name="equipe[{idx}].cargo"
                             bind:value={membro.cargo}
                             placeholder="—"
                             readonly
@@ -124,7 +124,7 @@
                         <input
                             id="equipe_{idx}_matricula"
                             type="text"
-                            name="equipe_{idx}_matricula"
+                            name="equipe[{idx}].matricula"
                             bind:value={membro.matricula}
                             placeholder="—"
                             readonly
@@ -210,7 +210,7 @@
                                 ><input
                                     id="equipe_{idx}_data_entrada"
                                     type="date"
-                                    name="equipe_{idx}_data_entrada"
+                                    name="equipe[{idx}].data_entrada"
                                     bind:value={membro.data_entrada}
                                     class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5"
                                 />
@@ -223,7 +223,7 @@
                                 ><input
                                     id="equipe_{idx}_hora_entrada"
                                     type="time"
-                                    name="equipe_{idx}_hora_entrada"
+                                    name="equipe[{idx}].hora_entrada"
                                     bind:value={membro.hora_entrada}
                                     class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5"
                                 />
@@ -236,7 +236,7 @@
                                 ><input
                                     id="equipe_{idx}_data_saida"
                                     type="date"
-                                    name="equipe_{idx}_data_saida"
+                                    name="equipe[{idx}].data_saida"
                                     bind:value={membro.data_saida}
                                     class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5"
                                 />
@@ -249,7 +249,7 @@
                                 ><input
                                     id="equipe_{idx}_hora_saida"
                                     type="time"
-                                    name="equipe_{idx}_hora_saida"
+                                    name="equipe[{idx}].hora_saida"
                                     bind:value={membro.hora_saida}
                                     class="w-full bg-white/10 text-white p-1.5 rounded text-xs outline-none mt-0.5"
                                 />
