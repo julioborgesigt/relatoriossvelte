@@ -47,9 +47,10 @@
                         ? 'bg-[#c5a059] text-[#0a192f]'
                         : 'text-slate-400 hover:text-white hover:bg-white/10'}"
                 >
-                    Plantao
+                    Plantão
                 </a>
-                {#if ["00000000", "12312312", "12345678"].includes(data.usuario?.matricula || "")}
+
+                {#if ["00000000", "12312312", "12345678"].includes(data.usuario?.matricula ?? "")}
                     <a
                         href="/dashboard"
                         class="px-3 py-1.5 rounded-lg transition font-bold {data.pathname ===
@@ -59,6 +60,17 @@
                     >
                         Dashboard
                     </a>
+
+                    <a
+                        href="/extras"
+                        class="px-3 py-1.5 rounded-lg transition font-bold {data.pathname ===
+                        '/extras'
+                            ? 'bg-[#c5a059] text-[#0a192f]'
+                            : 'text-slate-400 hover:text-white hover:bg-white/10'}"
+                    >
+                        Extras
+                    </a>
+
                     <a
                         href="/admin"
                         class="px-3 py-1.5 rounded-lg transition font-bold {data.pathname ===
