@@ -23,25 +23,29 @@
     );
 
     // ── Estado do modal de configuração ──────────────────────────────────────
-    // Se vier configurado via URL params (da página de retificação), pula o modal
-    let mostrarModalConfig = $state(!config.dir);
-    let justificativa = $state(
-        config.just ||
-            `O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial, conforme relatório de plantão ${formatarProtocolo(p.protocolo, p.id)}.`,
-    );
-    let nomeDiretor = $state(config.dir);
+    let mostrarModalConfig = $state(true);
+    let justificativa = $state("");
+    let nomeDiretor = $state("");
+    let membrosIncluidos = $state<string[]>([]);
+    let stateInitializado = false;
 
-    // Seleção de quais membros incluir na impressão
-    // Se vier lista via URL, filtra; caso contrário inclui todos
-    let membrosIncluidos = $state<string[]>(
-        config.mb
-            ? config.mb
-                  .split(",")
-                  .filter((n: string) =>
-                      equipeExtra.some((m: any) => m.nome_servidor === n),
-                  )
-            : equipeExtra.map((m: any) => m.nome_servidor),
-    );
+    $effect(() => {
+        if (!stateInitializado) {
+            mostrarModalConfig = !config.dir;
+            justificativa =
+                config.just ||
+                `O serviço extraordinário acima descrito foi necessário em razão da demanda operacional da unidade policial, conforme relatório de plantão ${formatarProtocolo(p.protocolo, p.id)}.`;
+            nomeDiretor = config.dir || "";
+            membrosIncluidos = config.mb
+                ? config.mb
+                      .split(",")
+                      .filter((n: string) =>
+                          equipeExtra.some((m: any) => m.nome_servidor === n),
+                      )
+                : equipeExtra.map((m: any) => m.nome_servidor);
+            stateInitializado = true;
+        }
+    });
 
     function toggleMembro(nome: string) {
         if (membrosIncluidos.includes(nome)) {
