@@ -196,7 +196,151 @@
             paginaAtual * itensPorPagina,
         ),
     );
+
+    // ─────────────────────────────────────────────────────────────
+    // Exportações (CSV & PDF)
+    // ─────────────────────────────────────────────────────────────
+
+    function exportarCSV() {
+        if (extrasFiltrados.length === 0) {
+            alert("Não há dados para exportar neste ciclo.");
+            return;
+        }
+
+        const cabecalho = [
+            "Servidor",
+            "Matricula",
+            "Cargo",
+            "Unidade",
+            "Protocolo",
+            "Data Entrada",
+            "Data Saida",
+            "Hora Entrada",
+            "Hora Saida",
+            "Duracao (Hrs)",
+        ];
+        const linhas = extrasFiltrados.map((info: any) => [
+            info.nome,
+            info.matricula,
+            info.cargo,
+            info.unidade,
+            info.protocolo,
+            info.data_entrada_formatada,
+            info.data_saida_formatada,
+            info.hora_entrada,
+            info.hora_saida,
+            info.horas.toLocaleString("pt-BR", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+            }),
+        ]);
+
+        const csvContent = [
+            cabecalho.join(";"),
+            ...linhas.map((row) => row.map((v) => `"${v}"`).join(";")),
+        ].join("\n");
+
+        const blob = new Blob(["\uFEFF" + csvContent], {
+            type: "text/csv;charset=utf-8;",
+        });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute(
+            "download",
+            `Relatorio_Extras_${cicloSelecionado.replace(/[\/\s]/g, "_")}.csv`,
+        );
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportarPDF() {
+        if (typeof window === "undefined" || !(window as any).jspdf) {
+            alert(
+                "A biblioteca de PDF ainda está carregando. Tente novamente em alguns segundos.",
+            );
+            return;
+        }
+        if (extrasFiltrados.length === 0) {
+            alert("Não há dados para exportar neste ciclo.");
+            return;
+        }
+
+        const { jsPDF } = (window as any).jspdf;
+        const doc = new jsPDF("l", "mm", "a4");
+
+        // Cabeçalho PDF
+        doc.setFontSize(14);
+        doc.setTextColor(10, 25, 47);
+        doc.text("Controle de Horas Extras - DPI SUL", 14, 20);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(
+            `Ciclo Vigente: ${cicloSelecionado} | Total de Horas: ${totalHorasFiltradas.toLocaleString("pt-BR", { minimumFractionDigits: 1 })} hrs`,
+            14,
+            28,
+        );
+
+        if (buscaServidor.trim() !== "") {
+            doc.text(`Filtro Ativo: "${buscaServidor}"`, 14, 34);
+        }
+
+        // Tabela usando autoTable integrado à janela local do jsPDF
+        const { autoTable } = (window as any).jspdf;
+
+        const colunas = [
+            "Servidor",
+            "Matrícula",
+            "Origem",
+            "Protocolo",
+            "Datas",
+            "Horários",
+            "Tempo(hs)",
+        ];
+        const linhas = extrasFiltrados.map((info: any) => [
+            info.nome,
+            info.matricula,
+            info.unidade,
+            info.protocolo,
+            `${info.data_entrada_formatada} a ${info.data_saida_formatada}`,
+            `${info.hora_entrada} - ${info.hora_saida}`,
+            info.horas.toLocaleString("pt-BR", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+            }),
+        ]);
+
+        doc.autoTable({
+            head: [colunas],
+            body: linhas,
+            startY: buscaServidor.trim() !== "" ? 40 : 35,
+            theme: "grid",
+            headStyles: {
+                fillColor: [197, 160, 89],
+                textColor: [10, 25, 47],
+                fontStyle: "bold",
+            },
+            bodyStyles: { fontSize: 8 },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+        });
+
+        doc.save(
+            `Relatorio_Extras_${cicloSelecionado.replace(/[\/\s]/g, "_")}.pdf`,
+        );
+    }
 </script>
+
+<svelte:head>
+    <!-- Importando dependências do gerador de PDF via script tag nativa -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+    ></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"
+    ></script>
+</svelte:head>
 
 <div class="pb-10 min-h-screen pt-4 px-4 md:px-0 bg-[#0a192f]">
     <main class="max-w-7xl mx-auto md:p-6">
@@ -261,6 +405,24 @@
                                 class="w-full bg-[#061325] border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-[#c5a059] placeholder:text-slate-600"
                             />
                         </div>
+                    </div>
+
+                    <!-- Botão de Exportação -->
+                    <div class="w-full sm:w-auto self-end sm:mt-0 flex gap-2">
+                        <button
+                            onclick={exportarCSV}
+                            title="Planilha CSV (Excel)"
+                            class="flex-1 sm:flex-none border border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059]/10 bg-[#061325] px-4 py-2 mt-4 sm:mt-0 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+                        >
+                            📊 <span class="hidden sm:inline">.CSV</span>
+                        </button>
+                        <button
+                            onclick={exportarPDF}
+                            title="Relatório em PDF"
+                            class="flex-1 sm:flex-none bg-[#c5a059] hover:bg-[#d6a951] text-[#0a192f] px-4 py-2 mt-4 sm:mt-0 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+                        >
+                            📄 <span class="hidden sm:inline">.PDF</span>
+                        </button>
                     </div>
                 </div>
             </div>

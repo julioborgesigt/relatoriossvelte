@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
             FROM plantoes_equipe e
             JOIN plantoes p ON e.plantao_id = p.id
             WHERE e.escala = 'Extraordinaria' 
-              AND p.status != 'Rascunho'
+              AND p.status = 'finalizado'
             ORDER BY e.data_entrada DESC, e.hora_entrada DESC
         `;
 
