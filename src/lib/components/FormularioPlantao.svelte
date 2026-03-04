@@ -51,93 +51,118 @@
     amanha.setDate(hoje.getDate() + 1);
 
     // Estado do formulário
-    let delegacia = $state(dadosIniciais?.delegacia ?? "");
-    let data_entrada = $state(
-        dadosIniciais?.data_entrada ?? getLocalYYYYMMDD(hoje),
-    );
-    let hora_entrada = $state(dadosIniciais?.hora_entrada ?? "");
-    let data_saida = $state(
-        dadosIniciais?.data_saida ?? getLocalYYYYMMDD(amanha),
-    );
-    let hora_saida = $state(dadosIniciais?.hora_saida ?? "");
-    let observacoes = $state(dadosIniciais?.observacoes ?? "");
+    let delegacia = $state("");
+    let data_entrada = $state(getLocalYYYYMMDD(hoje));
+    let hora_entrada = $state("");
+    let data_saida = $state(getLocalYYYYMMDD(amanha));
+    let hora_saida = $state("");
+    let observacoes = $state("");
 
     // Quantitativos
-    let q_bo = $state(dadosIniciais?.q_bo ?? 0);
-    let q_guias = $state(dadosIniciais?.q_guias ?? 0);
-    let q_apreensoes = $state(dadosIniciais?.q_apreensoes ?? 0);
-    let q_presos = $state(dadosIniciais?.q_presos ?? 0);
-    let q_medidas = $state(dadosIniciais?.q_medidas ?? 0);
-    let q_outros = $state(dadosIniciais?.q_outros ?? 0);
+    let q_bo = $state(0);
+    let q_guias = $state(0);
+    let q_apreensoes = $state(0);
+    let q_presos = $state(0);
+    let q_medidas = $state(0);
+    let q_outros = $state(0);
 
     // Equipe
-    let equipe = $state<Membro[]>(
-        equipeInicial && equipeInicial.length > 0
-            ? equipeInicial.map((m: any, i: number) => ({
-                  id: i,
-                  nome: m.nome_servidor ?? m.nome ?? "",
-                  matricula: m.matricula ?? "",
-                  cargo: m.cargo ?? "",
-                  telefone: m.telefone ?? "",
-                  lotacao: m.lotacao ?? m.classe ?? "",
-                  escala: (m.escala as "Normal" | "Extraordinaria" | "") ?? "",
-                  data_entrada: m.data_entrada ?? "",
-                  hora_entrada: m.hora_entrada ?? "",
-                  data_saida: m.data_saida ?? "",
-                  hora_saida: m.hora_saida ?? "",
-                  mostrarHorario: false,
-              }))
-            : [
-                  {
-                      id: 0,
-                      nome: "",
-                      matricula: "",
-                      cargo: "",
-                      telefone: "",
-                      lotacao: "",
-                      escala: "",
-                      data_entrada: "",
-                      hora_entrada: "",
-                      data_saida: "",
-                      hora_saida: "",
-                      mostrarHorario: false,
-                  },
-              ],
-    );
-    let nextMembroId = $state(equipe.length || 1);
+    let equipe = $state<Membro[]>([
+        {
+            id: 0,
+            nome: "",
+            matricula: "",
+            cargo: "",
+            telefone: "",
+            lotacao: "",
+            escala: "",
+            data_entrada: "",
+            hora_entrada: "",
+            data_saida: "",
+            hora_saida: "",
+            mostrarHorario: false,
+        },
+    ]);
+    let nextMembroId = $derived(equipe.length || 1);
 
     // Procedimentos
     let envolvidoCounter = $state(0);
-    let procedimentos = $state<Procedimento[]>(
-        procedimentosIniciais && procedimentosIniciais.length > 0
-            ? procedimentosIniciais.map((p: any, i: number) => {
-                  const vitimas = (p.vitimas as string[]).map(
-                      (texto: string) => ({ id: envolvidoCounter++, texto }),
-                  );
-                  if (vitimas.length === 0)
-                      vitimas.push({ id: envolvidoCounter++, texto: "" });
+    let procedimentos = $state<Procedimento[]>([]);
+    let nextProcId = $derived(procedimentos.length);
+    let nextEnvolvidoId = $state(0);
 
-                  const suspeitos = (p.suspeitos as string[]).map(
-                      (texto: string) => ({ id: envolvidoCounter++, texto }),
-                  );
-                  if (suspeitos.length === 0)
-                      suspeitos.push({ id: envolvidoCounter++, texto: "" });
+    // Inicialização segura baseada nas props (evita state_referenced_locally)
+    let initialized = $state(false);
+    $effect(() => {
+        if (!initialized && dadosIniciais) {
+            delegacia = dadosIniciais.delegacia ?? "";
+            data_entrada = dadosIniciais.data_entrada ?? getLocalYYYYMMDD(hoje);
+            hora_entrada = dadosIniciais.hora_entrada ?? "";
+            data_saida = dadosIniciais.data_saida ?? getLocalYYYYMMDD(amanha);
+            hora_saida = dadosIniciais.hora_saida ?? "";
+            observacoes = dadosIniciais.observacoes ?? "";
+            q_bo = dadosIniciais.q_bo ?? 0;
+            q_guias = dadosIniciais.q_guias ?? 0;
+            q_apreensoes = dadosIniciais.q_apreensoes ?? 0;
+            q_presos = dadosIniciais.q_presos ?? 0;
+            q_medidas = dadosIniciais.q_medidas ?? 0;
+            q_outros = dadosIniciais.q_outros ?? 0;
 
-                  return {
-                      id: i,
-                      tipo: p.tipo as TipoProc,
-                      numero: p.numero ?? "",
-                      natureza: p.natureza ?? "",
-                      envolvidos: p.envolvidos ?? "",
-                      resumo: p.resumo ?? "",
-                      vitimas,
-                      suspeitos,
-                  };
-              })
-            : [],
-    );
-    let nextProcId = $state(procedimentos.length);
-    let nextEnvolvidoId = $state(envolvidoCounter);
+            if (equipeInicial && equipeInicial.length > 0) {
+                equipe = equipeInicial.map((m: any, i: number) => ({
+                    id: i,
+                    nome: m.nome_servidor ?? m.nome ?? "",
+                    matricula: m.matricula ?? "",
+                    cargo: m.cargo ?? "",
+                    telefone: m.telefone ?? "",
+                    lotacao: m.lotacao ?? m.classe ?? "",
+                    escala:
+                        (m.escala as "Normal" | "Extraordinaria" | "") ?? "",
+                    data_entrada: m.data_entrada ?? "",
+                    hora_entrada: m.hora_entrada ?? "",
+                    data_saida: m.data_saida ?? "",
+                    hora_saida: m.hora_saida ?? "",
+                    mostrarHorario: false,
+                }));
+                nextMembroId = equipe.length;
+            }
+
+            if (procedimentosIniciais && procedimentosIniciais.length > 0) {
+                let envCounter = 0;
+                procedimentos = procedimentosIniciais.map(
+                    (p: any, i: number) => {
+                        const vitimas = (p.vitimas as string[]).map(
+                            (texto: string) => ({ id: envCounter++, texto }),
+                        );
+                        if (vitimas.length === 0)
+                            vitimas.push({ id: envCounter++, texto: "" });
+
+                        const suspeitos = (p.suspeitos as string[]).map(
+                            (texto: string) => ({ id: envCounter++, texto }),
+                        );
+                        if (suspeitos.length === 0)
+                            suspeitos.push({ id: envCounter++, texto: "" });
+
+                        return {
+                            id: i,
+                            tipo: p.tipo as TipoProc,
+                            numero: p.numero ?? "",
+                            natureza: p.natureza ?? "",
+                            envolvidos: p.envolvidos ?? "",
+                            resumo: p.resumo ?? "",
+                            vitimas,
+                            suspeitos,
+                        };
+                    },
+                );
+                nextProcId = procedimentos.length;
+                nextEnvolvidoId = envCounter;
+                envolvidoCounter = envCounter;
+            }
+
+            initialized = true;
+        }
+    });
 
     // UI states
     let carregando = $state(false);
@@ -604,12 +629,15 @@
                 Preencha os campos antes de gerar o relatório para impressão.
             </p>
 
+            <!-- svelte-ignore a11y_label_has_associated_control -->
             <label
+                for="justificativa-extra"
                 class="block text-[#c5a059] text-xs font-bold uppercase mb-1"
             >
                 Justificativa do Serviço Extraordinário
             </label>
             <textarea
+                id="justificativa-extra"
                 bind:value={justificativaExtra}
                 rows="4"
                 placeholder="Descreva a justificativa para o serviço extraordinário..."
@@ -617,13 +645,16 @@
             >
             </textarea>
 
+            <!-- svelte-ignore a11y_label_has_associated_control -->
             <label
+                for="diretor-extra"
                 class="block text-[#c5a059] text-xs font-bold uppercase mb-1"
             >
                 Diretor / Delegado Signatário <span class="text-red-400">*</span
                 >
             </label>
             <input
+                id="diretor-extra"
                 bind:value={nomeDiretorExtra}
                 type="text"
                 list="sugestoes-diretor-extra-plantao"
@@ -648,12 +679,14 @@
             {/if}
 
             {#if membrosExtraordinarios.length > 0}
-                <label
+                <span
+                    id="servidores-extra"
                     class="block text-[#c5a059] text-xs font-bold uppercase mb-2"
                 >
                     Servidores em Escala Extraordinária
-                </label>
+                </span>
                 <div
+                    aria-labelledby="servidores-extra"
                     class="bg-[#0a192f] border border-[#c5a059]/20 rounded-lg p-3 mb-4 space-y-2 max-h-40 overflow-y-auto"
                 >
                     {#each membrosExtraordinarios as membro}
@@ -723,17 +756,22 @@
 <!-- Modal de rascunho -->
 {#if mostrarModalRascunho}
     <div
-        class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+        class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
     >
         <div
-            class="bg-[#0d2340] border border-[#c5a059]/40 rounded-xl p-6 w-full max-w-sm shadow-2xl"
+            class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl relative"
         >
-            <h3 class="text-[#c5a059] font-bold uppercase text-sm mb-4">
+            <h3 class="text-xl font-bold text-yellow-400 mb-2">
                 Retomar Rascunho
             </h3>
+            <p class="text-slate-400 text-sm mb-6">
+                Cole o código do rascunho salvo anteriormente.
+            </p>
+
             <form
                 method="POST"
                 action="?/carregarRascunho"
+                class="space-y-4"
                 use:enhance={({ cancel }) => {
                     carregando = true;
                     return async ({ result, update }) => {
@@ -743,13 +781,21 @@
                     };
                 }}
             >
-                <input
-                    type="text"
-                    name="codigo"
-                    placeholder="R-000000"
-                    required
-                    class="w-full bg-white/10 border border-white/20 text-white p-3 rounded-lg font-mono text-center text-lg mb-4 outline-none focus:ring-2 focus:ring-[#c5a059] uppercase"
-                />
+                <div>
+                    <label
+                        for="codigo-rascunho"
+                        class="block text-slate-300 text-xs font-bold uppercase mb-1"
+                        >Código (Ex: R-000001)</label
+                    >
+                    <input
+                        id="codigo-rascunho"
+                        type="text"
+                        name="codigo"
+                        required
+                        placeholder="R-XXXXXX"
+                        class="w-full bg-slate-800 border border-slate-700 text-white p-2.5 rounded-xl uppercase"
+                    />
+                </div>
                 <div class="flex gap-2">
                     <button
                         type="submit"
@@ -869,91 +915,93 @@
                     Dados do Período
                 </h2>
 
-                <div class="mb-4">
-                    <label
-                        for="delegacia"
-                        class="block text-slate-300 text-xs font-bold uppercase mb-1"
-                        >Unidade Policial de Atuação *</label
-                    >
-                    <input
-                        id="delegacia"
-                        name="delegacia"
-                        type="text"
-                        list="lista-delegacias"
-                        bind:value={delegacia}
-                        placeholder="Digite ou selecione a delegacia..."
-                        required
-                        class="w-full bg-white/90 text-slate-900 p-3 rounded-lg font-medium focus:ring-2 focus:ring-[#c5a059] outline-none uppercase"
-                    />
-                    <datalist id="lista-delegacias">
-                        {#each delegacias as d}
-                            <option value={d.nome}>{d.nome}</option>
-                        {/each}
-                    </datalist>
-                </div>
+                <div class="space-y-4">
+                    <div class="mb-4">
+                        <label
+                            for="delegacia"
+                            class="block text-slate-300 text-xs font-bold uppercase mb-1"
+                            >Unidade Policial de Atuação *</label
+                        >
+                        <input
+                            id="delegacia"
+                            name="delegacia"
+                            type="text"
+                            list="lista-delegacias"
+                            bind:value={delegacia}
+                            placeholder="Digite ou selecione a delegacia..."
+                            required
+                            class="w-full bg-white/90 text-slate-900 p-3 rounded-lg font-medium focus:ring-2 focus:ring-[#c5a059] outline-none uppercase"
+                        />
+                        <datalist id="lista-delegacias">
+                            {#each delegacias as d}
+                                <option value={d.nome}>{d.nome}</option>
+                            {/each}
+                        </datalist>
+                    </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div>
-                        <label
-                            for="data_ent"
-                            class="block text-[#c5a059] text-[10px] font-bold uppercase mb-1"
-                            >Entrada (Data) *</label
-                        >
-                        <input
-                            id="data_ent"
-                            name="data_entrada"
-                            type="date"
-                            bind:value={data_entrada}
-                            required
-                            class="w-full bg-white/90 text-slate-900 p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#c5a059] text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            for="hora_ent"
-                            class="block text-[#c5a059] text-[10px] font-bold uppercase mb-1"
-                            >Entrada (Hora) *</label
-                        >
-                        <input
-                            id="hora_ent"
-                            name="hora_entrada"
-                            type="time"
-                            bind:value={hora_entrada}
-                            required
-                            class="w-full bg-white/90 text-slate-900 p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#c5a059] text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            for="data_said"
-                            class="block text-[#c5a059] text-[10px] font-bold uppercase mb-1"
-                            >Saída (Data)</label
-                        >
-                        <input
-                            id="data_said"
-                            name="data_saida"
-                            type="date"
-                            bind:value={data_saida}
-                            class="w-full {duracaoInvalida
-                                ? 'bg-red-100 ring-2 ring-red-400'
-                                : 'bg-white/90'} text-slate-900 p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#c5a059] text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            for="hora_said"
-                            class="block text-[#c5a059] text-[10px] font-bold uppercase mb-1"
-                            >Saída (Hora)</label
-                        >
-                        <input
-                            id="hora_said"
-                            name="hora_saida"
-                            type="time"
-                            bind:value={hora_saida}
-                            class="w-full {duracaoInvalida
-                                ? 'bg-red-100 ring-2 ring-red-400'
-                                : 'bg-white/90'} text-slate-900 p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#c5a059] text-sm"
-                        />
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <!-- Data Entrada -->
+                        <div>
+                            <label
+                                for="data_entrada"
+                                class="block text-slate-400 text-[10px] uppercase font-bold mb-1"
+                                >Entrada — Data *</label
+                            >
+                            <input
+                                id="data_entrada"
+                                type="date"
+                                name="data_entrada"
+                                bind:value={data_entrada}
+                                required
+                                class="w-full bg-slate-800 border border-slate-700 text-white p-2.5 rounded-lg text-sm outline-none focus:border-yellow-500 transition-colors"
+                            />
+                        </div>
+                        <!-- Hora Entrada -->
+                        <div>
+                            <label
+                                for="hora_entrada"
+                                class="block text-slate-400 text-[10px] uppercase font-bold mb-1"
+                                >Entrada — Hora *</label
+                            >
+                            <input
+                                id="hora_entrada"
+                                type="time"
+                                name="hora_entrada"
+                                bind:value={hora_entrada}
+                                required
+                                class="w-full bg-slate-800 border border-slate-700 text-white p-2.5 rounded-lg text-sm outline-none focus:border-yellow-500 transition-colors"
+                            />
+                        </div>
+                        <!-- Data Saída -->
+                        <div>
+                            <label
+                                for="data_saida"
+                                class="block text-slate-400 text-[10px] uppercase font-bold mb-1"
+                                >Saída — Data</label
+                            >
+                            <input
+                                id="data_saida"
+                                type="date"
+                                name="data_saida"
+                                bind:value={data_saida}
+                                class="w-full bg-slate-800 border border-slate-700 text-white p-2.5 rounded-lg text-sm outline-none focus:border-yellow-500 transition-colors"
+                            />
+                        </div>
+                        <!-- Hora Saída -->
+                        <div>
+                            <label
+                                for="hora_saida"
+                                class="block text-slate-400 text-[10px] uppercase font-bold mb-1"
+                                >Saída — Hora</label
+                            >
+                            <input
+                                id="hora_saida"
+                                type="time"
+                                name="hora_saida"
+                                bind:value={hora_saida}
+                                class="w-full bg-slate-800 border border-slate-700 text-white p-2.5 rounded-lg text-sm outline-none focus:border-yellow-500 transition-colors"
+                            />
+                        </div>
                     </div>
                 </div>
                 {#if duracaoInvalida}
@@ -1006,10 +1054,12 @@
                                     class="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 flex-1 w-full"
                                 >
                                     <label
+                                        for="equipe_{idx}_nome"
                                         class="text-[#c5a059] text-[9px] font-black uppercase tracking-wider whitespace-nowrap"
                                         >Nome do Policial</label
                                     >
                                     <input
+                                        id="equipe_{idx}_nome"
                                         name="equipe_{idx}_nome"
                                         type="text"
                                         list="lista-servidores"
@@ -1072,10 +1122,12 @@
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                                 <div>
                                     <label
+                                        for="equipe_{idx}_cargo"
                                         class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5"
                                         >Cargo</label
                                     >
                                     <input
+                                        id="equipe_{idx}_cargo"
                                         type="text"
                                         name="equipe_{idx}_cargo"
                                         bind:value={membro.cargo}
@@ -1086,10 +1138,12 @@
                                 </div>
                                 <div>
                                     <label
+                                        for="equipe_{idx}_matricula"
                                         class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5"
                                         >Matrícula</label
                                     >
                                     <input
+                                        id="equipe_{idx}_matricula"
                                         type="text"
                                         name="equipe_{idx}_matricula"
                                         bind:value={membro.matricula}
@@ -1100,10 +1154,12 @@
                                 </div>
                                 <div>
                                     <label
+                                        for="equipe_{idx}_telefone"
                                         class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5"
                                         >Telefone</label
                                     >
                                     <input
+                                        id="equipe_{idx}_telefone"
                                         type="text"
                                         bind:value={membro.telefone}
                                         placeholder="—"
@@ -1113,10 +1169,12 @@
                                 </div>
                                 <div>
                                     <label
+                                        for="equipe_{idx}_classe"
                                         class="block text-[9px] font-bold uppercase text-slate-500 mb-0.5"
                                         >Lotação</label
                                     >
                                     <input
+                                        id="equipe_{idx}_classe"
                                         type="text"
                                         name="equipe_{idx}_classe"
                                         bind:value={membro.lotacao}
@@ -1175,10 +1233,12 @@
                                     >
                                         <div>
                                             <label
+                                                for="equipe_{idx}_data_entrada"
                                                 class="text-slate-400 text-[10px] uppercase"
                                                 >Entrada — Data</label
                                             >
                                             <input
+                                                id="equipe_{idx}_data_entrada"
                                                 type="date"
                                                 name="equipe_{idx}_data_entrada"
                                                 bind:value={membro.data_entrada}
@@ -1187,10 +1247,12 @@
                                         </div>
                                         <div>
                                             <label
+                                                for="equipe_{idx}_hora_entrada"
                                                 class="text-slate-400 text-[10px] uppercase"
                                                 >Entrada — Hora</label
                                             >
                                             <input
+                                                id="equipe_{idx}_hora_entrada"
                                                 type="time"
                                                 name="equipe_{idx}_hora_entrada"
                                                 bind:value={membro.hora_entrada}
@@ -1199,10 +1261,12 @@
                                         </div>
                                         <div>
                                             <label
+                                                for="equipe_{idx}_data_saida"
                                                 class="text-slate-400 text-[10px] uppercase"
                                                 >Saída — Data</label
                                             >
                                             <input
+                                                id="equipe_{idx}_data_saida"
                                                 type="date"
                                                 name="equipe_{idx}_data_saida"
                                                 bind:value={membro.data_saida}
@@ -1211,10 +1275,12 @@
                                         </div>
                                         <div>
                                             <label
+                                                for="equipe_{idx}_hora_saida"
                                                 class="text-slate-400 text-[10px] uppercase"
                                                 >Saída — Hora</label
                                             >
                                             <input
+                                                id="equipe_{idx}_hora_saida"
                                                 type="time"
                                                 name="equipe_{idx}_hora_saida"
                                                 bind:value={membro.hora_saida}
@@ -1264,10 +1330,12 @@
                     {#each [{ label: "B.O.", name: "q_bo", bind: "q_bo" }, { label: "Guias", name: "q_guias", bind: "q_guias" }, { label: "Apreensões", name: "q_apreensoes", bind: "q_apreensoes" }, { label: "Presos", name: "q_presos", bind: "q_presos" }, { label: "Med. Prot.", name: "q_medidas", bind: "q_medidas" }, { label: "Outros", name: "q_outros", bind: "q_outros" }] as item, idx}
                         <div>
                             <label
+                                for="quantitativo_{item.name}"
                                 class="block text-[#c5a059] text-[10px] font-bold text-center uppercase mb-1"
                                 >{item.label}</label
                             >
                             <input
+                                id="quantitativo_{item.name}"
                                 type="number"
                                 name={item.name}
                                 min="0"
@@ -1355,10 +1423,12 @@
                             >
                                 <div>
                                     <label
+                                        for="proc_{idx}_numero"
                                         class="text-[10px] font-bold uppercase opacity-70 block mb-1"
                                         >Número do Procedimento</label
                                     >
                                     <input
+                                        id="proc_{idx}_numero"
                                         type="text"
                                         name="proc_{idx}_numero"
                                         bind:value={proc.numero}
@@ -1370,10 +1440,12 @@
                                 </div>
                                 <div>
                                     <label
+                                        for="proc_{idx}_natureza"
                                         class="text-[10px] font-bold uppercase opacity-70 block mb-1"
                                         >Natureza / Infração *</label
                                     >
                                     <input
+                                        id="proc_{idx}_natureza"
                                         type="text"
                                         name="proc_{idx}_natureza"
                                         bind:value={proc.natureza}
@@ -1387,18 +1459,25 @@
                             <!-- Vítimas e Suspeitos lado a lado -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
-                                    <label
+                                    <span
                                         class="text-[10px] font-bold uppercase opacity-70 block mb-1"
-                                        >Vítimas / Ofendidos</label
+                                        >Vítimas / Ofendidos</span
                                     >
                                     {#each proc.vitimas as vitima, vi (vitima.id)}
-                                        <div class="flex gap-1 mb-1">
+                                        <div class="flex gap-2">
+                                            <!-- svelte-ignore a11y_label_has_associated_control -->
+                                            <label
+                                                class="sr-only"
+                                                for="vitima_{idx}_{vi}_texto"
+                                                >Nome Vítima {vi + 1}</label
+                                            >
                                             <input
+                                                id="vitima_{idx}_{vi}_texto"
                                                 type="text"
                                                 name="proc_{idx}_vitima_{vi}"
                                                 bind:value={vitima.texto}
-                                                placeholder="Nome e qualificação..."
-                                                class="flex-1 bg-black/20 border border-current/20 text-white p-2 rounded text-xs outline-none uppercase"
+                                                placeholder="Nome ou 'A APURAR'"
+                                                class="flex-1 w-full bg-black/30 border border-current/30 text-white p-2 rounded-lg text-sm outline-none focus:ring-1 focus:ring-current uppercase"
                                             />
                                             {#if proc.vitimas.length > 1}
                                                 <button
@@ -1423,18 +1502,25 @@
                                 </div>
 
                                 <div>
-                                    <label
+                                    <span
                                         class="text-[10px] font-bold uppercase opacity-70 block mb-1"
-                                        >Suspeitos / Indiciados</label
+                                        >Suspeitos / Indiciados</span
                                     >
                                     {#each proc.suspeitos as suspeito, si (suspeito.id)}
-                                        <div class="flex gap-1 mb-1">
+                                        <div class="flex gap-2">
+                                            <!-- svelte-ignore a11y_label_has_associated_control -->
+                                            <label
+                                                class="sr-only"
+                                                for="suspeito_{idx}_{si}_texto"
+                                                >Nome Suspeito {si + 1}</label
+                                            >
                                             <input
+                                                id="suspeito_{idx}_{si}_texto"
                                                 type="text"
                                                 name="proc_{idx}_suspeito_{si}"
                                                 bind:value={suspeito.texto}
-                                                placeholder="Nome e qualificação..."
-                                                class="flex-1 bg-black/20 border border-current/20 text-white p-2 rounded text-xs outline-none uppercase"
+                                                placeholder="Nome ou 'A APURAR'"
+                                                class="flex-1 w-full bg-black/30 border border-current/30 text-white p-2 rounded-lg text-sm outline-none focus:ring-1 focus:ring-current uppercase"
                                             />
                                             {#if proc.suspeitos.length > 1}
                                                 <button
