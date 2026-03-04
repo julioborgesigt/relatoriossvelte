@@ -10,6 +10,7 @@ export const load: PageServerLoad = async ({ platform, url }) => {
         delegacias: [] as string[],
         estatisticas: { total: 0, rascunhos: 0, finalizados: 0, retificados: 0 },
         quantitativos: { bo: 0, guias: 0, apreensoes: 0, presos: 0, medidas: 0, outros: 0 },
+        qualitativos: [] as { tipo: string; quantidade: number }[],
         paginacao: { pagina: 1, porPagina: POR_PAGINA, totalRegistros: 0, totalPaginas: 0 },
     };
 
@@ -19,7 +20,7 @@ export const load: PageServerLoad = async ({ platform, url }) => {
     const offset = (pagina - 1) * POR_PAGINA;
 
     try {
-        const [plantoes, totalRes, stats, delegacias] = await Promise.all([
+        const [plantoes, totalRes, stats, delegacias, qualitativosStats] = await Promise.all([
             db.prepare(`
                 SELECT p.id, p.protocolo, p.delegacia, p.data_entrada, p.hora_entrada,
                        p.data_saida, p.hora_saida, p.status, p.nome_responsavel,
@@ -59,7 +60,15 @@ export const load: PageServerLoad = async ({ platform, url }) => {
                 SELECT DISTINCT delegacia FROM plantoes
                 WHERE delegacia IS NOT NULL AND delegacia != ''
                 ORDER BY delegacia
-            `).all<{ delegacia: string }>()
+            `).all<{ delegacia: string }>(),
+            db.prepare(`
+                SELECT pr.tipo, COUNT(*) as quantidade
+                FROM plantoes_procedimentos pr
+                JOIN plantoes p ON pr.plantao_id = p.id
+                WHERE p.status != 'rascunho'
+                GROUP BY pr.tipo
+                ORDER BY quantidade DESC
+            `).all<{ tipo: string; quantidade: number }>()
         ]);
 
         const totalRegistros = totalRes?.total ?? 0;
@@ -81,6 +90,7 @@ export const load: PageServerLoad = async ({ platform, url }) => {
                 medidas: stats?.total_medidas ?? 0,
                 outros: stats?.total_outros ?? 0
             },
+            qualitativos: qualitativosStats.results ?? [],
             paginacao: {
                 pagina,
                 porPagina: POR_PAGINA,
