@@ -67,3 +67,64 @@ export async function buscarServidores(db: D1Database): Promise<{ nome: string; 
         .all<{ nome: string; matricula: string; cargo: string; classe: string; lotacao: string }>();
     return result.results ?? [];
 }
+
+/** 
+ * Busca plantões em que o usuário participou, seja como responsável 
+ * ou como membro da equipe (em qualquer função), retornando as agrupações.
+ */
+export async function buscarPlantoesPorUsuario(
+    db: D1Database,
+    matricula: string,
+    limit: number,
+    offset: number
+): Promise<{ results: any[], total: number }> {
+    // Busca os id dos plantões em que a matricula faz parte
+    // Usa distinct para não duplicar se ele for responsável e equipe ao mesmo tempo
+    const countQuery = await db.prepare(`
+        SELECT COUNT(DISTINCT p.id) as total
+        FROM plantoes p
+        LEFT JOIN plantoes_equipe e ON p.id = e.plantao_id
+        WHERE p.matricula_responsavel = ? OR e.matricula = ?
+    `).bind(matricula, matricula).first<{ total: number }>();
+
+    const plantoesQuery = await db.prepare(`
+        SELECT p.id, p.protocolo, p.delegacia, p.data_entrada, p.hora_entrada,
+               p.data_saida, p.hora_saida, p.status, p.nome_responsavel,
+               p.q_bo, p.q_guias, p.q_apreensoes, p.q_presos, p.q_medidas, p.q_outros,
+               p.criado_em,
+               (SELECT COUNT(*) FROM plantoes_equipe WHERE plantao_id = p.id) as total_equipe,
+               (SELECT COUNT(*) FROM plantoes_procedimentos WHERE plantao_id = p.id) as total_procedimentos,
+               (SELECT GROUP_CONCAT(nome_servidor) FROM plantoes_equipe WHERE plantao_id = p.id) as servidores_equipe,
+               (SELECT GROUP_CONCAT(tipo) FROM plantoes_procedimentos WHERE plantao_id = p.id) as tipos_procedimento
+        FROM plantoes p
+        WHERE p.id IN (
+            SELECT DISTINCT p.id
+            FROM plantoes p
+            LEFT JOIN plantoes_equipe e ON p.id = e.plantao_id
+            WHERE p.matricula_responsavel = ? OR e.matricula = ?
+        )
+        ORDER BY p.criado_em DESC
+        LIMIT ? OFFSET ?
+    `).bind(matricula, matricula, limit, offset).all<any>();
+
+    return {
+        results: plantoesQuery.results ?? [],
+        total: countQuery?.total ?? 0
+    };
+}
+
+/**
+ * Retorna todos os registros da equipe_extra para a matrícula, em plantões FINALIZADOS.
+ * (Apenas horas validadas).
+ */
+export async function buscarHorasExtrasUsuario(db: D1Database, matricula: string): Promise<any[]> {
+    const result = await db.prepare(`
+        SELECT e.data_entrada, e.hora_entrada, e.data_saida, e.hora_saida, e.escala, p.status
+        FROM plantoes_equipe e
+        JOIN plantoes p ON e.plantao_id = p.id
+        WHERE e.matricula = ? 
+          AND e.escala = 'Extraordinaria'
+          AND (p.status = 'finalizado' OR p.status = 'retificado')
+    `).bind(matricula).all<any>();
+    return result.results ?? [];
+}

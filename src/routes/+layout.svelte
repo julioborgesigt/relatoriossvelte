@@ -53,6 +53,16 @@
                     Plantão
                 </a>
 
+                <a
+                    href="/meus-relatorios"
+                    class="px-3 py-1.5 rounded-lg transition font-bold {data.pathname ===
+                    '/meus-relatorios'
+                        ? 'bg-[#c5a059] text-[#0a192f]'
+                        : 'text-slate-400 hover:text-white hover:bg-white/10'}"
+                >
+                    Meus Relatórios
+                </a>
+
                 {#if ehAdmin}
                     <a
                         href="/dashboard"
