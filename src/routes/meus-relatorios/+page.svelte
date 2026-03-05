@@ -171,7 +171,7 @@
         >
             <div>
                 <h1
-                    class="text-2xl font-black text-white uppercase tracking-tight"
+                    class="text-xl md:text-2xl font-black text-white uppercase tracking-tight"
                 >
                     Meus Relatórios
                 </h1>

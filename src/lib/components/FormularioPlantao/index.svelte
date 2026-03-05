@@ -498,7 +498,9 @@
 
             <!-- Barra de ações unificada -->
             <div class="pt-6 border-t border-[#c5a059]/30">
-                <div class="grid grid-cols-2 lg:grid-cols-6 gap-2">
+                <div
+                    class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2"
+                >
                     {#if isRetificacao}
                         <div
                             class="col-span-2 lg:col-span-6 flex flex-wrap justify-center gap-2"

@@ -345,7 +345,7 @@
 <div class="pb-10 min-h-screen pt-4 px-4 md:px-0 bg-[#0a192f]">
     <main class="max-w-7xl mx-auto md:p-6">
         <h2
-            class="text-2xl font-black text-white mb-2 uppercase tracking-tight"
+            class="text-xl md:text-2xl font-black text-white mb-2 uppercase tracking-tight"
         >
             Controle de Horas Extras
         </h2>
@@ -494,7 +494,8 @@
                     </p>
                 </div>
             {:else}
-                <div class="overflow-x-auto">
+                <!-- Tabela desktop -->
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-sm text-left text-slate-300">
                         <thead
                             class="bg-[#061325] text-[10px] uppercase text-slate-400 border-b border-slate-700"
@@ -536,22 +537,18 @@
                                     </td>
                                     <td
                                         class="px-4 py-3 font-mono text-xs text-slate-400"
+                                        >{info.matricula}</td
                                     >
-                                        {info.matricula}
-                                    </td>
                                     <td
                                         class="px-4 py-3 text-xs uppercase font-medium text-slate-400 truncate max-w-[150px]"
-                                        title={info.unidade}
+                                        title={info.unidade}>{info.unidade}</td
                                     >
-                                        {info.unidade}
-                                    </td>
                                     <td class="px-4 py-3 text-center">
                                         <a
                                             href="/plantao/{info.plantao_id}"
                                             class="text-[10px] bg-[#061325] border border-slate-700 font-bold px-2 py-1 rounded text-slate-300 hover:border-[#c5a059] hover:text-[#c5a059] transition uppercase cursor-pointer"
+                                            >{info.protocolo}</a
                                         >
-                                            {info.protocolo}
-                                        </a>
                                     </td>
                                     <td class="px-4 py-3 text-center">
                                         <div
@@ -590,6 +587,70 @@
                             {/each}
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Cards mobile -->
+                <div class="md:hidden divide-y divide-slate-700">
+                    {#each itensPaginados as info}
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex-1 min-w-0 mr-3">
+                                    <p
+                                        class="font-bold text-slate-200 uppercase text-sm truncate"
+                                    >
+                                        {info.nome}
+                                    </p>
+                                    <p
+                                        class="text-[10px] text-slate-500 uppercase mt-0.5"
+                                    >
+                                        {info.cargo}
+                                    </p>
+                                    <p
+                                        class="text-[10px] text-slate-400 uppercase mt-0.5 truncate"
+                                    >
+                                        {info.unidade}
+                                    </p>
+                                </div>
+                                <span
+                                    class="font-black text-[#c5a059] text-lg shrink-0"
+                                >
+                                    {info.horas.toLocaleString("pt-BR", {
+                                        minimumFractionDigits: 1,
+                                        maximumFractionDigits: 1,
+                                    })}
+                                    <span
+                                        class="text-xs font-medium text-slate-400"
+                                        >h</span
+                                    >
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-2 flex-wrap mt-2">
+                                <a
+                                    href="/plantao/{info.plantao_id}"
+                                    class="text-[10px] bg-[#061325] border border-slate-700 font-bold px-2 py-1 rounded text-slate-300 hover:border-[#c5a059] hover:text-[#c5a059] transition uppercase"
+                                    >{info.protocolo}</a
+                                >
+                                <span
+                                    class="text-[10px] font-mono text-slate-500"
+                                    >{info.matricula}</span
+                                >
+                            </div>
+
+                            <div
+                                class="mt-2 bg-[#c5a059]/10 border border-[#c5a059]/20 rounded-lg px-3 py-1.5 text-xs"
+                            >
+                                <span class="font-bold text-slate-200"
+                                    >{info.data_entrada_formatada} → {info.data_saida_formatada}</span
+                                >
+                                <span class="text-slate-500 mx-2">|</span>
+                                <span class="text-slate-400"
+                                    >{info.hora_entrada || "--:--"} às {info.hora_saida ||
+                                        "--:--"}</span
+                                >
+                            </div>
+                        </div>
+                    {/each}
                 </div>
 
                 <!-- Paginação -->
