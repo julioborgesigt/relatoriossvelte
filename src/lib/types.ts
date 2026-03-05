@@ -10,6 +10,7 @@ export type Usuario = {
     email: string;
     lotacao: string | null;
     cargo: string | null;
+    is_admin?: number;
 };
 
 /** Registro completo de um plantão no banco de dados */

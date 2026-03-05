@@ -1,9 +1,14 @@
 import type { PageServerLoad } from './$types';
 import type { PlantaoListItem } from '$lib/types';
+import { isAdmin } from '$lib/server/auth';
+import { redirect } from '@sveltejs/kit';
 
 const POR_PAGINA = 10;
 
-export const load: PageServerLoad = async ({ platform, url }) => {
+export const load: PageServerLoad = async ({ platform, url, locals }) => {
+    if (!isAdmin(locals.usuario)) {
+        throw redirect(302, '/plantao');
+    }
     const db = platform?.env.remocoespcce;
     const vazio = {
         plantoes: [] as PlantaoListItem[],

@@ -1,9 +1,14 @@
 import type { PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
+import { isAdmin } from '$lib/server/auth';
 
 export const load: PageServerLoad = async ({ platform, locals }) => {
     const db = platform?.env.remocoespcce;
     const usuario = locals.usuario;
+
+    if (!isAdmin(usuario)) {
+        throw redirect(302, '/plantao');
+    }
 
     if (!db) {
         return {

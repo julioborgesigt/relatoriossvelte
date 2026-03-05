@@ -1,5 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
+import { isAdmin } from '$lib/server/auth';
 
 export const load: PageServerLoad = async ({ platform, locals }) => {
     const db = platform?.env.remocoespcce;
@@ -7,22 +8,16 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 
     if (!db) return vazio;
 
-    const isAdmin = ['00000000', '12312312', '12345678'].includes(locals.usuario?.matricula || '');
-    if (!isAdmin) {
-        return {
-            delegaciasAdmin: [],
-            servidoresAdmin: [],
-            usuario: locals.usuario,
-            pageTitle: 'Acesso Negado',
-            pageHeading: 'Ops...',
-            pageSubheading: 'Você não tem permissão para acessar a administração.'
-        };
+    const isAdminUser = isAdmin(locals.usuario);
+    if (!isAdminUser) {
+        // Redireciona em vez de retornar dados vazios
+        throw redirect(302, '/plantao');
     }
 
     try {
         const [delegaciasAdmin, servidoresAdmin] = await Promise.all([
             db.prepare(`SELECT id, nome, status, data_expiracao FROM delegacias ORDER BY nome`).all(),
-            db.prepare(`SELECT id, nome, matricula, cargo, classe, telefone, lotacao, email, ativo FROM servidores ORDER BY nome`).all()
+            db.prepare(`SELECT id, nome, matricula, cargo, classe, telefone, lotacao, email, ativo, is_admin FROM servidores ORDER BY nome`).all()
         ]);
 
         return {
@@ -46,8 +41,8 @@ export const actions: Actions = {
         const usuario = locals.usuario;
         if (!usuario) return fail(401, { erro: 'Sessão expirada. Faça login novamente.' });
 
-        const isAdmin = ['00000000', '12312312', '12345678'].includes(usuario.matricula);
-        if (!isAdmin) return fail(403, { erro: 'Sem permissão para esta ação.' });
+        const isAdminUser = isAdmin(usuario);
+        if (!isAdminUser) return fail(403, { erro: 'Sem permissão para esta ação.' });
 
         const formData = await request.formData();
         const acao = formData.get('acao')?.toString();
@@ -93,7 +88,8 @@ export const actions: Actions = {
                     if (!nome || !matricula || !email || !cargo || !telefone || !lotacao) {
                         return fail(400, { erro: 'Nome, matrícula, email, cargo, telefone e lotação são obrigatórios.' });
                     }
-                    await db.prepare(`INSERT INTO servidores (nome,matricula,email,cargo,classe,telefone,lotacao,ativo) VALUES (?,?,?,?,?,?,?,?)`)
+                    const is_admin = formData.get('is_admin') === 'on' ? 1 : 0;
+                    await db.prepare(`INSERT INTO servidores (nome,matricula,email,cargo,classe,telefone,lotacao,ativo,is_admin) VALUES (?,?,?,?,?,?,?,?,?)`)
                         .bind(
                             nome,
                             matricula,
@@ -102,7 +98,8 @@ export const actions: Actions = {
                             formData.get('classe')?.toString() || null,
                             telefone,
                             lotacao,
-                            formData.get('ativo') === 'on' ? 1 : 0
+                            formData.get('ativo') === 'on' ? 1 : 0,
+                            is_admin
                         )
                         .run();
                     break;
@@ -121,8 +118,9 @@ export const actions: Actions = {
                     if (!nome || !matricula || !email || !cargo || !telefone || !lotacao) {
                         return fail(400, { erro: 'Nome, matrícula, email, cargo, telefone e lotação são obrigatórios.' });
                     }
+                    const is_admin = formData.get('is_admin') === 'on' ? 1 : 0;
 
-                    await db.prepare(`UPDATE servidores SET nome=?, matricula=?, email=?, cargo=?, classe=?, telefone=?, lotacao=?, ativo=? WHERE id=?`)
+                    await db.prepare(`UPDATE servidores SET nome=?, matricula=?, email=?, cargo=?, classe=?, telefone=?, lotacao=?, ativo=?, is_admin=? WHERE id=?`)
                         .bind(
                             nome,
                             matricula,
@@ -132,6 +130,7 @@ export const actions: Actions = {
                             telefone,
                             lotacao,
                             formData.get('ativo') === 'on' ? 1 : 0,
+                            is_admin,
                             id
                         )
                         .run();

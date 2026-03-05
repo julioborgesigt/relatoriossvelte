@@ -19,13 +19,13 @@ export const handle: Handle = async ({ event, resolve }) => {
             const db = event.platform.env.remocoespcce;
             const agora = new Date().toISOString();
 
-            const sessao = await db
-                .prepare(`SELECT * FROM sessoes WHERE session_id = ? AND expira_em > ? LIMIT 1`)
+            const sessao_raw = await db
+                .prepare(`SELECT s.*, serv.is_admin FROM sessoes s LEFT JOIN servidores serv ON s.matricula = serv.matricula WHERE s.session_id = ? AND s.expira_em > ? LIMIT 1`)
                 .bind(sessionId, agora)
-                .first<Usuario>();
+                .first<Usuario & { is_admin?: number }>();
 
-            if (sessao) {
-                event.locals.usuario = sessao;
+            if (sessao_raw) {
+                event.locals.usuario = sessao_raw;
             }
         } catch (err) {
             console.error('Erro ao verificar sessão:', err);
@@ -36,11 +36,6 @@ export const handle: Handle = async ({ event, resolve }) => {
     if (!ehPublica && !event.locals.usuario) {
         const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
         throw redirect(302, loginUrl);
-    }
-
-    // Admin (matrícula 00000000) acessa somente o dashboard
-    if (event.locals.usuario?.matricula === '00000000' && pathname === '/plantao') {
-        throw redirect(302, '/dashboard');
     }
 
     return resolve(event);

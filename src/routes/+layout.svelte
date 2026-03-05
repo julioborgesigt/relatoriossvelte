@@ -15,6 +15,9 @@
         rotasSemNav.some((r) => data.pathname?.startsWith(r)),
     );
     const mostraNav = $derived(!!data.usuario && !ehPublica && !ehImpressao);
+    const ehAdmin = $derived(
+        data.usuario?.is_admin === 1 || data.usuario?.matricula === "00000000",
+    );
 </script>
 
 <svelte:head>
@@ -50,7 +53,7 @@
                     Plantão
                 </a>
 
-                {#if ["00000000", "12312312", "12345678"].includes(data.usuario?.matricula ?? "")}
+                {#if ehAdmin}
                     <a
                         href="/dashboard"
                         class="px-3 py-1.5 rounded-lg transition font-bold {data.pathname ===

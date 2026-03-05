@@ -386,7 +386,9 @@
                         class="w-full bg-[#061325] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-[#c5a059] placeholder:text-slate-500"
                     />
                 </div>
-                <div class="w-full sm:w-auto flex items-center h-[38px] px-2">
+                <div
+                    class="w-full sm:w-auto flex items-center gap-4 h-[38px] px-2"
+                >
                     <label
                         class="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-400"
                     >
@@ -398,6 +400,17 @@
                             class="w-4 h-4 text-[#c5a059] rounded border-slate-700 focus:ring-[#c5a059] bg-[#061325]"
                         />
                         Ativo
+                    </label>
+                    <label
+                        class="flex items-center gap-2 cursor-pointer text-sm font-bold text-amber-400"
+                    >
+                        <input
+                            id="novo-servidor-is_admin"
+                            type="checkbox"
+                            name="is_admin"
+                            class="w-4 h-4 text-amber-400 rounded border-slate-700 focus:ring-amber-400 bg-[#061325]"
+                        />
+                        Admin
                     </label>
                 </div>
                 <button
@@ -486,16 +499,29 @@
                                                 placeholder="Lotação"
                                             />
                                         </div>
-                                        <label
-                                            class="flex items-center gap-1.5 text-xs font-bold text-slate-400 cursor-pointer"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                name="ativo"
-                                                checked={s.ativo === 1}
-                                                class="w-3.5 h-3.5 rounded text-[#c5a059] focus:ring-[#c5a059] bg-[#061325] border border-slate-700"
-                                            /> Ativo
-                                        </label>
+                                        <div class="flex items-center gap-3">
+                                            <label
+                                                class="flex items-center gap-1.5 text-xs font-bold text-slate-400 cursor-pointer"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    name="ativo"
+                                                    checked={s.ativo === 1}
+                                                    class="w-3.5 h-3.5 rounded text-[#c5a059] focus:ring-[#c5a059] bg-[#061325] border border-slate-700"
+                                                /> Ativo
+                                            </label>
+                                            <label
+                                                class="flex items-center gap-1.5 text-xs font-bold text-amber-400 cursor-pointer"
+                                                title="Marcar como administrador para liberar acesso ao Dashboard e Extras"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    name="is_admin"
+                                                    checked={s.is_admin === 1}
+                                                    class="w-3.5 h-3.5 rounded text-amber-400 focus:ring-amber-400 bg-[#061325] border border-slate-700"
+                                                /> Admin
+                                            </label>
+                                        </div>
                                         <button
                                             type="submit"
                                             class="bg-[#c5a059]/10 text-[#c5a059] hover:bg-[#c5a059]/20 font-bold px-3 py-1.5 rounded-lg text-xs transition"

@@ -1,5 +1,6 @@
 import { fail, redirect, isRedirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { isAdmin } from '$lib/server/auth';
 
 function gerarSessionId(): string {
     const array = new Uint8Array(32);
@@ -10,8 +11,7 @@ function gerarSessionId(): string {
 export const load: PageServerLoad = async ({ locals, url }) => {
     // Se já estiver logado, redireciona
     if (locals.usuario) {
-        const isAdmin = ['00000000', '12312312', '12345678'].includes(locals.usuario.matricula);
-        const redirectPath = isAdmin ? '/dashboard' : '/plantao';
+        const redirectPath = isAdmin(locals.usuario) ? '/dashboard' : '/plantao';
         throw redirect(302, url.searchParams.get('redirect') || redirectPath);
     }
     return { etapa: 'matricula' };
@@ -144,9 +144,9 @@ export const actions: Actions = {
 
             // Busca dados do servidor
             const servidor = await db
-                .prepare(`SELECT nome, matricula, email, cargo, lotacao FROM servidores WHERE email = ? LIMIT 1`)
+                .prepare(`SELECT nome, matricula, email, cargo, lotacao, is_admin FROM servidores WHERE email = ? LIMIT 1`)
                 .bind(email)
-                .first<{ nome: string; matricula: string; email: string; cargo: string; lotacao: string }>();
+                .first<{ nome: string; matricula: string; email: string; cargo: string; lotacao: string; is_admin: number }>();
 
             if (!servidor) {
                 return fail(404, { erro: 'Servidor não encontrado.' });
@@ -170,8 +170,8 @@ export const actions: Actions = {
                 maxAge: 8 * 60 * 60 // 8 horas em segundos
             });
 
-            const isAdmin = ['00000000', '12312312', '12345678'].includes(servidor.matricula);
-            const redirectPath = isAdmin ? '/dashboard' : '/plantao';
+            const isUserAdmin = servidor.is_admin === 1 || servidor.matricula === '00000000';
+            const redirectPath = isUserAdmin ? '/dashboard' : '/plantao';
             const redirecionarPara = url.searchParams.get('redirect') || redirectPath;
             throw redirect(303, redirecionarPara);
         } catch (err) {
