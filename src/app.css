@@ -1,4 +1,38 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* Skeleton UI v3 */
+@import '@skeletonlabs/skeleton';
+@import '@skeletonlabs/skeleton-svelte';
+
+/* Tema base: Cerberus (será sobrescrito pelas variáveis customizadas abaixo) */
+@import '@skeletonlabs/skeleton/themes/cerberus';
+
+/* Tema customizado DPI SUL (navy + gold) */
+:root {
+    --color-primary-50: 255 251 235;
+    --color-primary-100: 254 243 199;
+    --color-primary-200: 253 230 138;
+    --color-primary-300: 252 211 77;
+    --color-primary-400: 251 191 36;
+    --color-primary-500: 197 160 89;
+    --color-primary-600: 180 140 70;
+    --color-primary-700: 160 120 50;
+    --color-primary-800: 120 90 30;
+    --color-primary-900: 80 60 10;
+    --color-primary-950: 40 30 5;
+
+    --color-surface-50: 241 245 249;
+    --color-surface-100: 226 232 240;
+    --color-surface-200: 203 213 225;
+    --color-surface-300: 148 163 184;
+    --color-surface-400: 100 116 139;
+    --color-surface-500: 71 85 105;
+    --color-surface-600: 51 65 85;
+    --color-surface-700: 30 41 59;
+    --color-surface-800: 15 23 42;
+    --color-surface-900: 10 25 47;
+    --color-surface-950: 6 19 37;
+}
 
 @keyframes fade-in-up {
     from {
